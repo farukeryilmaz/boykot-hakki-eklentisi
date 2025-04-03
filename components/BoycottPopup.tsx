@@ -4,31 +4,26 @@ interface BoycottPopupProps {
     description: string;
     onProceed: () => void;
     onClose: () => void;
-    canGoBack: boolean; // New prop to determine button text
+    canGoBack: boolean;
 }
 
 const BoycottPopup: React.FC<BoycottPopupProps> = ({description, onProceed, onClose, canGoBack}) => {
     return (
-        <div style={{
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            background: 'white',
-            padding: '20px',
-            zIndex: 1000,
-            borderRadius: '5px',
-            boxShadow: '0 0 10px rgba(0,0,0,0.1)'
-        }}>
-            <h2>Boycott Alert</h2>
-            <p>{description}</p>
-            <div style={{marginTop: '10px'}}>
-                <button onClick={onProceed} style={{marginRight: '10px', padding: '5px 10px'}}>Proceed Anyway</button>
-                <button onClick={onClose} style={{padding: '5px 10px'}}>
-                    {canGoBack ? 'Go Back' : 'Close Website'}
-                </button>
+        <>
+            <div className="boycott-backdrop"/>
+            <div className="boycott-popup">
+                <h2>Boycott Alert</h2>
+                <p>{description}</p>
+                <div className="button-container">
+                    <button className="proceed" onClick={onProceed}>
+                        Proceed Anyway
+                    </button>
+                    <button className="close" onClick={onClose}>
+                        {canGoBack ? 'Go Back' : 'Close Website'}
+                    </button>
+                </div>
             </div>
-        </div>
+        </>
     );
 };
 

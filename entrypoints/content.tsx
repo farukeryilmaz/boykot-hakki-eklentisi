@@ -1,6 +1,7 @@
 import {createShadowRootUi} from 'wxt/client';
 import ReactDOM from 'react-dom/client';
 import boycottList from '~/assets/boycott_lists/boycott-list.json';
+import '~/components/BoycottPopup.css';
 import BoycottPopup from '~/components/BoycottPopup';
 
 export default defineContentScript({
@@ -12,13 +13,11 @@ export default defineContentScript({
             domain === item.domain || domain.endsWith(`.${item.domain}`)
         );
         if (entry) {
-            // Check if there's a previous page in history
             const canGoBack = window.history.length > 1;
-
             const ui = await createShadowRootUi(ctx, {
                 name: 'boycott-popup',
                 position: 'inline',
-                anchor: 'body',
+                anchor: document.documentElement,
                 onMount: (container) => {
                     const app = document.createElement('div');
                     container.append(app);
@@ -34,7 +33,7 @@ export default defineContentScript({
                                     chrome.runtime.sendMessage({action: 'closeTab'});
                                 }
                             }}
-                            canGoBack={canGoBack} // Pass this prop to the component
+                            canGoBack={canGoBack}
                         />
                     );
                     return root;
