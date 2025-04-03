@@ -4,9 +4,10 @@ interface BoycottPopupProps {
     description: string;
     onProceed: () => void;
     onClose: () => void;
+    canGoBack: boolean; // New prop to determine button text
 }
 
-const BoycottPopup: React.FC<BoycottPopupProps> = ({description, onProceed, onClose}) => {
+const BoycottPopup: React.FC<BoycottPopupProps> = ({description, onProceed, onClose, canGoBack}) => {
     return (
         <div style={{
             position: 'fixed',
@@ -23,7 +24,9 @@ const BoycottPopup: React.FC<BoycottPopupProps> = ({description, onProceed, onCl
             <p>{description}</p>
             <div style={{marginTop: '10px'}}>
                 <button onClick={onProceed} style={{marginRight: '10px', padding: '5px 10px'}}>Proceed Anyway</button>
-                <button onClick={onClose} style={{padding: '5px 10px'}}>Close Website</button>
+                <button onClick={onClose} style={{padding: '5px 10px'}}>
+                    {canGoBack ? 'Go Back' : 'Close Website'}
+                </button>
             </div>
         </div>
     );

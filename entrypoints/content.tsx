@@ -7,11 +7,14 @@ export default defineContentScript({
     matches: ['<all_urls>'],
     cssInjectionMode: 'ui',
     async main(ctx) {
-        const domain = window.location.hostname.toLowerCase(); // Normalize to lowercase
+        const domain = window.location.hostname.toLowerCase();
         const entry = boycottList.find(item =>
             domain === item.domain || domain.endsWith(`.${item.domain}`)
         );
         if (entry) {
+            // Check if there's a previous page in history
+            const canGoBack = window.history.length > 1;
+
             const ui = await createShadowRootUi(ctx, {
                 name: 'boycott-popup',
                 position: 'inline',
@@ -24,7 +27,14 @@ export default defineContentScript({
                         <BoycottPopup
                             description={entry.description}
                             onProceed={() => ui.remove()}
-                            onClose={() => chrome.runtime.sendMessage({action: 'closeTab'})}
+                            onClose={() => {
+                                if (canGoBack) {
+                                    window.history.back();
+                                } else {
+                                    chrome.runtime.sendMessage({action: 'closeTab'});
+                                }
+                            }}
+                            canGoBack={canGoBack} // Pass this prop to the component
                         />
                     );
                     return root;
