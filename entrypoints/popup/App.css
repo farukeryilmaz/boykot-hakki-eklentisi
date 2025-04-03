@@ -17,6 +17,12 @@
     color: #FFF;
 }
 
+.app-container h2 {
+    font-size: 16px;
+    margin: 10px 0;
+    color: #FFF;
+}
+
 .app-container ul {
     list-style: none;
     padding: 0;
@@ -45,6 +51,22 @@
 }
 
 .app-container .saved-feedback {
+    margin: 0 0 0 10px;
+    color: #4caf50;
+}
+
+.app-container .reset-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.app-container .reset-button {
+    /* No need for extra margin here; handled by reset-container */
+}
+
+.app-container .reset-feedback {
     margin: 0 0 0 10px;
     color: #4caf50;
 }

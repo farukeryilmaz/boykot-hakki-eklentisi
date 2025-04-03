@@ -10,20 +10,44 @@ const boycottLists: Record<string, { domain: string; description: string }[]> = 
     testList2: testBoycottList2,
 };
 
+const timeoutDurations: Record<string, number> = {
+    '1h': 60 * 60 * 1000,
+    '1d': 24 * 60 * 60 * 1000,
+    '1w': 7 * 24 * 60 * 60 * 1000,
+};
+
 export default defineContentScript({
     matches: ['<all_urls>'],
     cssInjectionMode: 'ui',
     async main(ctx) {
         const domain = window.location.hostname.toLowerCase();
-        const {selectedBoycottList} = await chrome.storage.sync.get({
-            selectedBoycottList: 'testList1',
-        });
-        const activeList = boycottLists[selectedBoycottList] || boycottLists['testList1'];
 
+        const {selectedBoycottList, timeoutDuration, skippedDomains} = await chrome.storage.sync.get({
+            selectedBoycottList: 'testList1',
+            timeoutDuration: '1h',
+            skippedDomains: {},
+        });
+
+        console.log('Current domain:', domain);
+        console.log('Selected list:', selectedBoycottList);
+        console.log('Timeout duration:', timeoutDuration);
+        console.log('Skipped domains:', skippedDomains);
+
+        const activeList = boycottLists[selectedBoycottList] || boycottLists['testList1'];
         const entry = activeList.find(item =>
             domain === item.domain || domain.endsWith(`.${item.domain}`)
         );
+
         if (entry) {
+            const now = Date.now();
+            const skipData = skippedDomains[domain];
+            console.log('Skip data for domain:', skipData, 'Now:', now);
+
+            if (skipData && now < skipData) {
+                console.log('Skipping popup due to active timeout');
+                return;
+            }
+
             const canGoBack = window.history.length > 1;
             const ui = await createShadowRootUi(ctx, {
                 name: 'boycott-popup',
@@ -36,7 +60,15 @@ export default defineContentScript({
                     root.render(
                         <BoycottPopup
                             description={entry.description}
-                            onProceed={() => ui.remove()}
+                            onProceed={() => {
+                                const timeoutMs = timeoutDurations[timeoutDuration];
+                                const expiry = now + timeoutMs;
+                                const updatedSkippedDomains = {...skippedDomains, [domain]: expiry};
+                                chrome.storage.sync.set({skippedDomains: updatedSkippedDomains}, () => {
+                                    console.log('Set skip timeout for', domain, 'until', expiry);
+                                });
+                                ui.remove();
+                            }}
                             onClose={() => {
                                 if (canGoBack) {
                                     window.history.back();
