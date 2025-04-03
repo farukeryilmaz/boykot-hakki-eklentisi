@@ -1,42 +1,50 @@
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0.5rem;
+    text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #54bc4ae0);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.app-container {
+    padding: 10px;
+    min-width: 200px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.app-container h1 {
+    font-size: 18px;
+    margin: 0 0 10px;
+    color: #FFF;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.app-container ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
-.card {
-  padding: 2em;
+.app-container li {
+    margin: 5px 0;
 }
 
-.read-the-docs {
-  color: #888;
+.app-container label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.app-container input[type="radio"] {
+    margin-right: 5px;
+}
+
+.app-container .save-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.app-container .saved-feedback {
+    margin: 0 0 0 10px;
+    color: #4caf50;
 }
