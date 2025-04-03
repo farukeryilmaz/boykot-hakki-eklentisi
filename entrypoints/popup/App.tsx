@@ -2,6 +2,7 @@ import React, {useState, useEffect} from 'react';
 import './App.css';
 
 const App: React.FC = () => {
+    const [isActive, setIsActive] = useState<boolean>(true);
     const [selectedList, setSelectedList] = useState<string>('testList1');
     const [pendingList, setPendingList] = useState<string>('testList1');
     const [isSaved, setIsSaved] = useState<boolean>(false);
@@ -21,15 +22,25 @@ const App: React.FC = () => {
     ];
 
     useEffect(() => {
-        chrome.storage.sync.get(['selectedBoycottList', 'timeoutDuration'], (data) => {
+        chrome.storage.sync.get(['isActive', 'selectedBoycottList', 'timeoutDuration'], (data) => {
+            const savedActive = data.isActive !== undefined ? data.isActive : true;
             const savedList = data.selectedBoycottList || 'testList1';
             const savedTimeout = data.timeoutDuration || '1h';
+            setIsActive(savedActive);
             setSelectedList(savedList);
             setPendingList(savedList);
             setTimeoutDuration(savedTimeout);
             setPendingTimeout(savedTimeout);
         });
     }, []);
+
+    const handleToggleActive = () => {
+        const newActiveState = !isActive;
+        setIsActive(newActiveState);
+        chrome.storage.sync.set({isActive: newActiveState}, () => {
+            console.log(`Extension ${newActiveState ? 'activated' : 'deactivated'}`);
+        });
+    };
 
     const handleListSelect = (listId: string) => {
         setPendingList(listId);
@@ -57,13 +68,23 @@ const App: React.FC = () => {
     const handleResetTimeouts = () => {
         chrome.storage.sync.set({skippedDomains: {}}, () => {
             console.log('Timeouts reset');
-            setIsReset(true); // Show reset feedback
-            setTimeout(() => setIsReset(false), 2000); // Hide after 2 seconds
+            setIsReset(true);
+            setTimeout(() => setIsReset(false), 2000);
         });
     };
 
     return (
         <div className="app-container">
+            <div className="toggle-container">
+                <label className="switch-label">
+                    <input
+                        type="checkbox"
+                        checked={isActive}
+                        onChange={handleToggleActive}
+                    />
+                    <span>{isActive ? 'Active' : 'Inactive'}</span>
+                </label>
+            </div>
             <h1>Boycott List</h1>
             <ul>
                 {boycottLists.map((list) => (

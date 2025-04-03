@@ -22,16 +22,23 @@ export default defineContentScript({
     async main(ctx) {
         const domain = window.location.hostname.toLowerCase();
 
-        const {selectedBoycottList, timeoutDuration, skippedDomains} = await chrome.storage.sync.get({
+        const {isActive, selectedBoycottList, timeoutDuration, skippedDomains} = await chrome.storage.sync.get({
+            isActive: true,
             selectedBoycottList: 'testList1',
             timeoutDuration: '1h',
             skippedDomains: {},
         });
 
+        console.log('Is active:', isActive);
         console.log('Current domain:', domain);
         console.log('Selected list:', selectedBoycottList);
         console.log('Timeout duration:', timeoutDuration);
         console.log('Skipped domains:', skippedDomains);
+
+        if (!isActive) {
+            console.log('Extension inactive, skipping popup');
+            return;
+        }
 
         const activeList = boycottLists[selectedBoycottList] || boycottLists['testList1'];
         const entry = activeList.find(item =>
