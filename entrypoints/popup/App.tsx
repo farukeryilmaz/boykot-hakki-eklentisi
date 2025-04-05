@@ -1,5 +1,4 @@
 import React, {useState, useEffect} from 'react';
-import './App.css';
 
 const App: React.FC = () => {
     const [isActive, setIsActive] = useState<boolean>(true);
@@ -22,7 +21,6 @@ const App: React.FC = () => {
         {id: '1w', name: '1 Week', ms: 7 * 24 * 60 * 60 * 1000},
     ];
 
-    // Fetch boycott list options when popup opens
     useEffect(() => {
         chrome.storage.sync.get(['isActive', 'selectedBoycottList', 'timeoutDuration', 'cachedBoycottLists'], (data) => {
             const savedActive = data.isActive !== undefined ? data.isActive : true;
@@ -36,7 +34,6 @@ const App: React.FC = () => {
             setTimeoutDuration(savedTimeout);
             setPendingTimeout(savedTimeout);
 
-            // Set initial list options from cache or default
             const listOptions = Object.keys(cachedLists).length > 0
                 ? Object.keys(cachedLists).map((key) => ({
                     id: key,
@@ -87,60 +84,83 @@ const App: React.FC = () => {
     };
 
     return (
-        <div className="app-container">
-            <div className="toggle-container">
-                <label className="switch-label">
+        <div className="p-4 w-70 bg-gray-900 text-white shadow-lg font-sans">
+            {/* Active/Inactive Switch */}
+            <div className="flex items-center justify-between mb-4">
+                <span className="text-lg font-semibold">Boykot Hakkı</span>
+                <label className="relative inline-flex items-center cursor-pointer">
                     <input
                         type="checkbox"
                         checked={isActive}
                         onChange={handleToggleActive}
+                        className="sr-only peer"
                     />
-                    <span>{isActive ? 'Active' : 'Inactive'}</span>
+                    <span
+                        className="mr-3 text-sm font-medium text-gray-900 dark:text-gray-300">{isActive ? 'Aktif' : 'Kapalı'}</span>
+                    <div
+                        className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-600 dark:peer-checked:bg-green-600"
+                    ></div>
                 </label>
             </div>
-            <h1>Boycott List</h1>
-            <ul>
-                {boycottLists.map((list) => (
-                    <li key={list.id}>
-                        <label>
-                            <input
-                                type="radio"
-                                name="boycottList"
-                                value={list.id}
-                                checked={pendingList === list.id}
-                                onChange={() => handleListSelect(list.id)}
-                            />
-                            {list.name}
-                        </label>
-                    </li>
-                ))}
-            </ul>
-            <h2>Skip Timeout</h2>
-            <ul>
-                {timeoutOptions.map((option) => (
-                    <li key={option.id}>
-                        <label>
-                            <input
-                                type="radio"
-                                name="timeoutDuration"
-                                value={option.id}
-                                checked={pendingTimeout === option.id}
-                                onChange={() => handleTimeoutSelect(option.id)}
-                            />
-                            {option.name}
-                        </label>
-                    </li>
-                ))}
-            </ul>
-            <div className="save-container">
-                <button onClick={handleSave}>Save</button>
-                {isSaved && <p className="saved-feedback">Saved!</p>}
+
+            {/* Boycott List */}
+            <div className="mb-4">
+                <h2 className="text-md font-medium text-gray-300 mb-2">Boycott List</h2>
+                <ul className="space-y-2">
+                    {boycottLists.map((list) => (
+                        <li key={list.id}>
+                            <label className="flex items-center space-x-2 cursor-pointer">
+                                <input
+                                    type="radio"
+                                    name="boycottList"
+                                    value={list.id}
+                                    checked={pendingList === list.id}
+                                    onChange={() => handleListSelect(list.id)}
+                                    className="w-4 h-4 text-blue-600 bg-gray-800 border-gray-600 focus:ring-blue-500"
+                                />
+                                <span className="text-sm">{list.name}</span>
+                            </label>
+                        </li>
+                    ))}
+                </ul>
             </div>
-            <div className="reset-container">
-                <button className="reset-button" onClick={handleResetTimeouts}>
+
+            {/* Skip Timeout Combobox */}
+            <div className="mb-4">
+                <h2 className="text-md font-medium text-gray-300 mb-2">Skip Timeout</h2>
+                <select
+                    value={pendingTimeout}
+                    onChange={(e) => handleTimeoutSelect(e.target.value)}
+                    className="w-full p-2 bg-gray-800 text-white border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                    {timeoutOptions.map((option) => (
+                        <option key={option.id} value={option.id} className="bg-gray-800">
+                            {option.name}
+                        </option>
+                    ))}
+                </select>
+            </div>
+
+            {/* Reset Timeouts Button */}
+            <div className="flex items-center justify-between mb-4">
+                <button
+                    onClick={handleResetTimeouts}
+                    className="w-full py-2 bg-gray-700 text-white rounded-md hover:bg-gray-700 transition-colors duration-200"
+                >
                     Reset Timeouts
                 </button>
-                {isReset && <p className="reset-feedback">Reset!</p>}
+                {isReset && <span className="ml-2 text-green-500 text-sm">Reset!</span>}
+            </div>
+
+            {/* Save All Button */}
+            <div className="flex items-center justify-between">
+                <button
+                    onClick={handleSave}
+                    className="w-full py-2 bg-blue-800 text-white rounded-md hover:bg-blue-700 transition-colors duration-200"
+                >
+                    Save All
+                </button>
+                {isSaved && <span className="ml-2 text-green-500 text-sm">Saved!</span>}
             </div>
         </div>
     );
