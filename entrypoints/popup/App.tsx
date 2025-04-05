@@ -23,10 +23,11 @@ const App: React.FC = () => {
 
     useEffect(() => {
         chrome.storage.sync.get(['isActive', 'selectedBoycottList', 'timeoutDuration', 'cachedBoycottLists'], (data) => {
-            const savedActive = data.isActive !== undefined ? data.isActive : true;
-            const savedList = data.selectedBoycottList || 'testList1';
-            const savedTimeout = data.timeoutDuration || '1h';
-            const cachedLists = data.cachedBoycottLists || {};
+            const storageData = data || {};
+            const savedActive = 'isActive' in storageData && typeof storageData.isActive === 'boolean' ? storageData.isActive : true;
+            const savedList = storageData.selectedBoycottList || 'testList1';
+            const savedTimeout = storageData.timeoutDuration || '1h';
+            const cachedLists = storageData.cachedBoycottLists || {};
 
             setIsActive(savedActive);
             setSelectedList(savedList);
