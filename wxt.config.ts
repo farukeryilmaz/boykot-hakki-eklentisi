@@ -4,6 +4,7 @@ import { defineConfig } from 'wxt';
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   manifest: {
-    permissions: ['tabs', 'storage'],
+    permissions: ['tabs', 'storage', 'alarms'],
+    host_permissions: ['https://raw.githubusercontent.com/*'],
   },
 });

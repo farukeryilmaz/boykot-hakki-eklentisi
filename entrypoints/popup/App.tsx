@@ -9,8 +9,9 @@ const App: React.FC = () => {
     const [timeoutDuration, setTimeoutDuration] = useState<string>('1h');
     const [pendingTimeout, setPendingTimeout] = useState<string>('1h');
     const [isReset, setIsReset] = useState<boolean>(false);
+    const [boycottLists, setBoycottLists] = useState<{ id: string; name: string }[]>([]);
 
-    const boycottLists = [
+    const defaultLists = [
         {id: 'testList1', name: 'Test Boycott List - 1'},
         {id: 'testList2', name: 'Test Boycott List - 2'},
     ];
@@ -21,16 +22,28 @@ const App: React.FC = () => {
         {id: '1w', name: '1 Week', ms: 7 * 24 * 60 * 60 * 1000},
     ];
 
+    // Fetch boycott list options when popup opens
     useEffect(() => {
-        chrome.storage.sync.get(['isActive', 'selectedBoycottList', 'timeoutDuration'], (data) => {
+        chrome.storage.sync.get(['isActive', 'selectedBoycottList', 'timeoutDuration', 'cachedBoycottLists'], (data) => {
             const savedActive = data.isActive !== undefined ? data.isActive : true;
             const savedList = data.selectedBoycottList || 'testList1';
             const savedTimeout = data.timeoutDuration || '1h';
+            const cachedLists = data.cachedBoycottLists || {};
+
             setIsActive(savedActive);
             setSelectedList(savedList);
             setPendingList(savedList);
             setTimeoutDuration(savedTimeout);
             setPendingTimeout(savedTimeout);
+
+            // Set initial list options from cache or default
+            const listOptions = Object.keys(cachedLists).length > 0
+                ? Object.keys(cachedLists).map((key) => ({
+                    id: key,
+                    name: key.charAt(0).toUpperCase() + key.slice(1),
+                }))
+                : defaultLists;
+            setBoycottLists(listOptions);
         });
     }, []);
 

@@ -5,7 +5,7 @@ import testBoycottList2 from '@/assets/boycott_lists/test-boycott-list-2.json';
 import '~/components/BoycottPopup.css';
 import BoycottPopup from '~/components/BoycottPopup';
 
-const boycottLists: Record<string, { domain: string; description: string }[]> = {
+const defaultBoycottLists: Record<string, { domain: string; description: string }[]> = {
     testList1: testBoycottList1,
     testList2: testBoycottList2,
 };
@@ -22,11 +22,18 @@ export default defineContentScript({
     async main(ctx) {
         const domain = window.location.hostname.toLowerCase();
 
-        const {isActive, selectedBoycottList, timeoutDuration, skippedDomains} = await chrome.storage.sync.get({
+        const {
+            isActive,
+            selectedBoycottList,
+            timeoutDuration,
+            skippedDomains,
+            cachedBoycottLists
+        } = await chrome.storage.sync.get({
             isActive: true,
             selectedBoycottList: 'testList1',
             timeoutDuration: '1h',
             skippedDomains: {},
+            cachedBoycottLists: defaultBoycottLists, // Fallback to local assets
         });
 
         console.log('Is active:', isActive);
@@ -34,14 +41,15 @@ export default defineContentScript({
         console.log('Selected list:', selectedBoycottList);
         console.log('Timeout duration:', timeoutDuration);
         console.log('Skipped domains:', skippedDomains);
+        console.log('Using boycott lists:', cachedBoycottLists);
 
         if (!isActive) {
             console.log('Extension inactive, skipping popup');
             return;
         }
 
-        const activeList = boycottLists[selectedBoycottList] || boycottLists['testList1'];
-        const entry = activeList.find(item =>
+        const activeList = cachedBoycottLists[selectedBoycottList] || cachedBoycottLists['testList1'] || [];
+        const entry = activeList.find((item: { domain: string; }) =>
             domain === item.domain || domain.endsWith(`.${item.domain}`)
         );
 
