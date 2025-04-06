@@ -24,6 +24,7 @@ const App: React.FC = () => {
     const [isBoycotted, setIsBoycotted] = useState<boolean>(false);
     const [isDisabled, setIsDisabled] = useState<boolean>(false);
     const [cachedBoycottLists, setCachedBoycottLists] = useState<any>(defaultBoycottLists);
+    const [disabledDomains, setDisabledDomains] = useState<string[]>([]);
 
     const defaultLists = [
         {id: 'testList1', name: 'Test Boycott List - 1'},
@@ -54,13 +55,14 @@ const App: React.FC = () => {
             const savedLists = Array.isArray(storageData.selectedBoycottLists) ? storageData.selectedBoycottLists : [];
             const savedTimeout = storageData.timeoutDuration || '1h';
             const cachedLists = storageData.cachedBoycottLists || defaultBoycottLists;
-            const disabledDomains = storageData.disabledBoycottDomains || {};
+            const disabledDomainsData = storageData.disabledBoycottDomains || {};
 
             setIsActive(savedActive);
             setSelectedLists(savedLists);
             setTimeoutDuration(savedTimeout);
             setPendingTimeout(savedTimeout);
             setCachedBoycottLists(cachedLists);
+            setDisabledDomains(Object.keys(disabledDomainsData));
 
             const listOptions = Object.keys(cachedLists).length > 0
                 ? Object.keys(cachedLists).map((key) => ({
@@ -75,7 +77,7 @@ const App: React.FC = () => {
                     const url = new URL(tabs[0].url);
                     const domain = url.hostname;
                     setCurrentDomain(domain);
-                    setIsDisabled(!!disabledDomains[domain]);
+                    setIsDisabled(!!disabledDomainsData[domain]);
                     checkBoycottStatus(domain, savedActive, savedLists, cachedLists);
                 } else {
                     setCurrentDomain('Unknown');
@@ -134,8 +136,9 @@ const App: React.FC = () => {
                     console.log(`Removed ${currentDomain} from temporary skipped list`);
                 }
                 setIsDisabled(!isDisabled);
+                setDisabledDomains(Object.keys(disabledDomains));
                 setListSaved(true);
-                setTimeout(() => setListSaved(false), 7000);
+                setTimeout(() => setListSaved(false), 10000);
             });
         });
     };
@@ -316,7 +319,7 @@ const App: React.FC = () => {
                             {isReset && <span className="ml-2 text-green-500 text-sm">Reset!</span>}
                         </div>
 
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between mb-4">
                             <button
                                 onClick={handleSave}
                                 className="w-full py-2 bg-blue-800 text-white rounded-md hover:bg-blue-700 transition-colors duration-200"
@@ -325,6 +328,19 @@ const App: React.FC = () => {
                             </button>
                             {isSaved && <span className="ml-2 text-green-500 text-sm">Saved!</span>}
                         </div>
+
+                        {disabledDomains.length > 0 && (
+                            <div className="mt-4">
+                                <h2 className="text-md font-medium text-gray-300 mb-2">Disabled Boycott Websites</h2>
+                                <ul className="text-sm text-gray-300 max-h-40 overflow-y-auto pl-1">
+                                    {disabledDomains.map((domain, index) => (
+                                        <li key={index} className="truncate" title={domain}>
+                                            {domain}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
                     </>
                 )}
 
