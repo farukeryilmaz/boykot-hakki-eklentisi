@@ -11,6 +11,11 @@ export default defineConfig({
     version: '0.1.0',
     permissions: ['tabs', 'storage', 'alarms'],
     host_permissions: ['https://raw.githubusercontent.com/*'],
+    browser_specific_settings: {
+      gecko: {
+        id: 'addon@example.com', // Replace with your email address or use a UUID
+      },
+    },
   },
   vite: () => ({
     plugins: [
