@@ -11,14 +11,11 @@ export default defineBackground({
             domain: string;
             description: string
         }[] | null> {
-            try {
-                const response = await fetch(`${baseUrl}${fileName}`);
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch ${fileName}`);
-                }
+            const response = await fetch(`${baseUrl}${fileName}`);
+            if (response.ok) {
                 return await response.json();
-            } catch (error) {
-                console.error(`Error fetching ${fileName}:`, error);
+            } else {
+                console.info(`Failed to fetch ${fileName} from GitHub; using local list instead`);
                 return null;
             }
         }
@@ -50,7 +47,7 @@ export default defineBackground({
 
         chrome.alarms.onAlarm.addListener((alarm) => {
             if (alarm.name === 'fetchBoycottLists') {
-                fetchBoycottLists().catch((error) => console.error('Hourly fetch failed:', error));
+                fetchBoycottLists().catch((error) => console.info('Hourly fetch failed:', error));
             }
         });
 
