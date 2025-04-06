@@ -25,6 +25,7 @@ const App: React.FC = () => {
     const [isDisabled, setIsDisabled] = useState<boolean>(false);
     const [cachedBoycottLists, setCachedBoycottLists] = useState<any>(defaultBoycottLists);
     const [disabledDomains, setDisabledDomains] = useState<string[]>([]);
+    const [isHardReset, setIsHardReset] = useState<boolean>(false);
 
     const defaultLists = [
         {id: 'testList1', name: 'Test Boycott List - 1'},
@@ -170,6 +171,27 @@ const App: React.FC = () => {
             if (tabs[0]?.id) {
                 chrome.tabs.reload(tabs[0].id);
             }
+        });
+    };
+
+    const handleHardReset = () => {
+        chrome.storage.sync.set({
+            skippedDomains: {},
+            timeoutDuration: '1h',
+            disabledBoycottDomains: {},
+            selectedBoycottLists: [],
+            isActive: false
+        }, () => {
+            console.log('Hard reset completed: all settings reverted to defaults');
+            setIsActive(false);
+            setSelectedLists([]);
+            setTimeoutDuration('1h');
+            setPendingTimeout('1h');
+            setDisabledDomains([]);
+            setIsBoycotted(false);
+            setIsDisabled(false);
+            setIsHardReset(true);
+            setTimeout(() => setIsHardReset(false), 2000);
         });
     };
 
@@ -329,10 +351,20 @@ const App: React.FC = () => {
                             {isSaved && <span className="ml-2 text-green-500 text-sm">Saved!</span>}
                         </div>
 
+                        <div className="flex items-center justify-between mb-4">
+                            <button
+                                onClick={handleHardReset}
+                                className="w-full py-2 bg-red-800 text-white rounded-md hover:bg-red-700 transition-colors duration-200"
+                            >
+                                Hard Reset
+                            </button>
+                            {isHardReset && <span className="ml-2 text-green-500 text-sm">Reset!</span>}
+                        </div>
+
                         {disabledDomains.length > 0 && (
                             <div className="mt-4">
                                 <h2 className="text-md font-medium text-gray-300 mb-2">Disabled Boycott Websites</h2>
-                                <ul className="text-sm text-gray-300 max-h-40 overflow-y-auto pl-1">
+                                <ul className="text-sm text-gray-300 max-h-40 overflow-y-auto pl-4">
                                     {disabledDomains.map((domain, index) => (
                                         <li key={index} className="truncate" title={domain}>
                                             {domain}
