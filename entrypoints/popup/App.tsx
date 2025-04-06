@@ -2,8 +2,8 @@ import React, {useState, useEffect} from 'react';
 
 const App: React.FC = () => {
     const [isActive, setIsActive] = useState<boolean>(true);
-    const [selectedList, setSelectedList] = useState<string>('testList1');
-    const [pendingList, setPendingList] = useState<string>('testList1');
+    const [selectedLists, setSelectedLists] = useState<string[]>(['testList1']);
+    const [pendingLists, setPendingLists] = useState<string[]>(['testList1']);
     const [isSaved, setIsSaved] = useState<boolean>(false);
     const [timeoutDuration, setTimeoutDuration] = useState<string>('1h');
     const [pendingTimeout, setPendingTimeout] = useState<string>('1h');
@@ -22,23 +22,23 @@ const App: React.FC = () => {
     ];
 
     useEffect(() => {
-        chrome.storage.sync.get(['isActive', 'selectedBoycottList', 'timeoutDuration', 'cachedBoycottLists'], (data) => {
+        chrome.storage.sync.get(['isActive', 'selectedBoycottLists', 'timeoutDuration', 'cachedBoycottLists'], (data) => {
             const storageData = data || {};
             const savedActive = 'isActive' in storageData && typeof storageData.isActive === 'boolean' ? storageData.isActive : true;
-            const savedList = storageData.selectedBoycottList || 'testList1';
+            const savedLists = Array.isArray(storageData.selectedBoycottLists) && storageData.selectedBoycottLists.length > 0 ? storageData.selectedBoycottLists : ['testList1'];
             const savedTimeout = storageData.timeoutDuration || '1h';
             const cachedLists = storageData.cachedBoycottLists || {};
 
             setIsActive(savedActive);
-            setSelectedList(savedList);
-            setPendingList(savedList);
+            setSelectedLists(savedLists);
+            setPendingLists(savedLists);
             setTimeoutDuration(savedTimeout);
             setPendingTimeout(savedTimeout);
 
             const listOptions = Object.keys(cachedLists).length > 0
                 ? Object.keys(cachedLists).map((key) => ({
                     id: key,
-                    name: key.charAt(0).toUpperCase() + key.slice(1),
+                    name: cachedLists[key].name || key.charAt(0).toUpperCase() + key.slice(1),
                 }))
                 : defaultLists;
             setBoycottLists(listOptions);
@@ -53,8 +53,10 @@ const App: React.FC = () => {
         });
     };
 
-    const handleListSelect = (listId: string) => {
-        setPendingList(listId);
+    const handleListToggle = (listId: string) => {
+        setPendingLists((prev) =>
+            prev.includes(listId) ? prev.filter((id) => id !== listId) : [...prev, listId]
+        );
         setIsSaved(false);
     };
 
@@ -64,12 +66,12 @@ const App: React.FC = () => {
     };
 
     const handleSave = () => {
-        setSelectedList(pendingList);
+        setSelectedLists(pendingLists);
         setTimeoutDuration(pendingTimeout);
         chrome.storage.sync.set(
-            {selectedBoycottList: pendingList, timeoutDuration: pendingTimeout},
+            {selectedBoycottLists: pendingLists, timeoutDuration: pendingTimeout},
             () => {
-                console.log(`Saved boycott list: ${pendingList}, timeout: ${pendingTimeout}`);
+                console.log(`Saved boycott lists: ${pendingLists}, timeout: ${pendingTimeout}`);
                 setIsSaved(true);
                 setTimeout(() => setIsSaved(false), 2000);
             }
@@ -86,7 +88,6 @@ const App: React.FC = () => {
 
     return (
         <div className="p-4 w-70 bg-gray-900 text-white shadow-lg font-sans">
-            {/* Active/Inactive Switch */}
             <div className="flex items-center justify-between mb-4">
                 <span className="text-lg font-semibold">Boykot Hakkı</span>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -104,19 +105,16 @@ const App: React.FC = () => {
                 </label>
             </div>
 
-            {/* Boycott List */}
             <div className="mb-4">
-                <h2 className="text-md font-medium text-gray-300 mb-2">Boycott List</h2>
+                <h2 className="text-md font-medium text-gray-300 mb-2">Boycott Lists</h2>
                 <ul className="space-y-2">
                     {boycottLists.map((list) => (
                         <li key={list.id}>
                             <label className="flex items-center space-x-2 cursor-pointer">
                                 <input
-                                    type="radio"
-                                    name="boycottList"
-                                    value={list.id}
-                                    checked={pendingList === list.id}
-                                    onChange={() => handleListSelect(list.id)}
+                                    type="checkbox"
+                                    checked={pendingLists.includes(list.id)}
+                                    onChange={() => handleListToggle(list.id)}
                                     className="w-4 h-4 text-blue-600 bg-gray-800 border-gray-600 focus:ring-blue-500"
                                 />
                                 <span className="text-sm">{list.name}</span>
@@ -126,7 +124,6 @@ const App: React.FC = () => {
                 </ul>
             </div>
 
-            {/* Skip Timeout Combobox */}
             <div className="mb-4">
                 <h2 className="text-md font-medium text-gray-300 mb-2">Skip Timeout</h2>
                 <select
@@ -142,7 +139,6 @@ const App: React.FC = () => {
                 </select>
             </div>
 
-            {/* Reset Timeouts Button */}
             <div className="flex items-center justify-between mb-4">
                 <button
                     onClick={handleResetTimeouts}
@@ -153,7 +149,6 @@ const App: React.FC = () => {
                 {isReset && <span className="ml-2 text-green-500 text-sm">Reset!</span>}
             </div>
 
-            {/* Save All Button */}
             <div className="flex items-center justify-between">
                 <button
                     onClick={handleSave}

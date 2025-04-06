@@ -5,7 +5,7 @@ import testBoycottList2 from '@/assets/boycott_lists/test-boycott-list-2.json';
 import "~/assets/tailwind.css";
 import BoycottPopup from '~/components/BoycottPopup';
 
-const defaultBoycottLists: Record<string, { domain: string; description: string }[]> = {
+const defaultBoycottLists: Record<string, { name: string; items: { domain: string; description: string }[] }> = {
     testList1: testBoycottList1,
     testList2: testBoycottList2,
 };
@@ -24,42 +24,42 @@ export default defineContentScript({
 
         const {
             isActive,
-            selectedBoycottList,
+            selectedBoycottLists,
             timeoutDuration,
             skippedDomains,
             cachedBoycottLists
         } = await chrome.storage.sync.get({
             isActive: true,
-            selectedBoycottList: 'testList1',
+            selectedBoycottLists: ['testList1'],
             timeoutDuration: '1h',
             skippedDomains: {},
             cachedBoycottLists: defaultBoycottLists,
         });
 
-        console.log('Is active:', isActive);
-        console.log('Current domain:', domain);
-        console.log('Selected list:', selectedBoycottList);
-        console.log('Timeout duration:', timeoutDuration);
-        console.log('Skipped domains:', skippedDomains);
-        console.log('Using boycott lists:', cachedBoycottLists);
-
         if (!isActive) {
-            console.log('Extension inactive, skipping popup');
             return;
         }
 
-        const activeList = cachedBoycottLists[selectedBoycottList] || cachedBoycottLists['testList1'] || [];
-        const entry = activeList.find((item: { domain: string; }) =>
-            domain === item.domain || domain.endsWith(`.${item.domain}`)
-        );
+        const activeLists = Array.isArray(selectedBoycottLists) ? selectedBoycottLists : ['testList1'];
+        const boycottEntries: { source: string; description: string }[] = [];
+        const matchingListNames: string[] = [];
 
-        if (entry) {
+        for (const listName of activeLists) {
+            const list = cachedBoycottLists[listName] || defaultBoycottLists[listName] || {name: listName, items: []};
+            const entry = list.items.find((item: { domain: string; }) =>
+                domain === item.domain || domain.endsWith(`.${item.domain}`)
+            );
+            if (entry) {
+                boycottEntries.push({source: list.name, description: entry.description});
+                matchingListNames.push(list.name);
+            }
+        }
+
+        if (boycottEntries.length > 0) {
             const now = Date.now();
             const skipData = skippedDomains[domain];
-            console.log('Skip data for domain:', skipData, 'Now:', now);
 
             if (skipData && now < skipData) {
-                console.log('Skipping popup due to active timeout');
                 return;
             }
 
@@ -74,14 +74,13 @@ export default defineContentScript({
                     const root = ReactDOM.createRoot(app);
                     root.render(
                         <BoycottPopup
-                            description={entry.description}
+                            entries={boycottEntries}
+                            matchingListNames={matchingListNames}
                             onProceed={() => {
                                 const timeoutMs = timeoutDurations[timeoutDuration];
                                 const expiry = now + timeoutMs;
                                 const updatedSkippedDomains = {...skippedDomains, [domain]: expiry};
-                                chrome.storage.sync.set({skippedDomains: updatedSkippedDomains}, () => {
-                                    console.log('Set skip timeout for', domain, 'until', expiry);
-                                });
+                                chrome.storage.sync.set({skippedDomains: updatedSkippedDomains});
                                 ui.remove();
                             }}
                             onClose={() => {
