@@ -23,7 +23,7 @@ const App: React.FC = () => {
     const [currentDomain, setCurrentDomain] = useState<string>('');
     const [isBoycotted, setIsBoycotted] = useState<boolean>(false);
     const [isDisabled, setIsDisabled] = useState<boolean>(false);
-    const [cachedBoycottLists, setCachedBoycottLists] = useState<any>(defaultBoycottLists); // Default to local lists
+    const [cachedBoycottLists, setCachedBoycottLists] = useState<any>(defaultBoycottLists);
 
     const defaultLists = [
         {id: 'testList1', name: 'Test Boycott List - 1'},
@@ -38,7 +38,7 @@ const App: React.FC = () => {
 
     const checkBoycottStatus = (domain: string, active: boolean, lists: string[], boycottData: any) => {
         const isInBoycottList = lists.some((listId) => {
-            const list = boycottData[listId] || defaultBoycottLists[listId] || {items: []}; // Fallback to local
+            const list = boycottData[listId] || defaultBoycottLists[listId] || {items: []};
             return list.items?.some((item: { domain: string }) =>
                 domain === item.domain || domain.endsWith(`.${item.domain}`)
             );
@@ -53,7 +53,7 @@ const App: React.FC = () => {
             const savedActive = 'isActive' in storageData && typeof storageData.isActive === 'boolean' ? storageData.isActive : false;
             const savedLists = Array.isArray(storageData.selectedBoycottLists) ? storageData.selectedBoycottLists : [];
             const savedTimeout = storageData.timeoutDuration || '1h';
-            const cachedLists = storageData.cachedBoycottLists || defaultBoycottLists; // Fallback to local
+            const cachedLists = storageData.cachedBoycottLists || defaultBoycottLists;
             const disabledDomains = storageData.disabledBoycottDomains || {};
 
             setIsActive(savedActive);
@@ -111,15 +111,28 @@ const App: React.FC = () => {
     };
 
     const handleToggleBoycott = () => {
-        chrome.storage.sync.get('disabledBoycottDomains', (data) => {
+        chrome.storage.sync.get(['disabledBoycottDomains', 'skippedDomains'], (data) => {
             const disabledDomains = data.disabledBoycottDomains || {};
+            const skippedDomains = data.skippedDomains || {};
+
             if (isDisabled) {
                 delete disabledDomains[currentDomain];
             } else {
                 disabledDomains[currentDomain] = true;
             }
-            chrome.storage.sync.set({disabledBoycottDomains: disabledDomains}, () => {
+
+            if (skippedDomains[currentDomain]) {
+                delete skippedDomains[currentDomain];
+            }
+
+            chrome.storage.sync.set({
+                disabledBoycottDomains: disabledDomains,
+                skippedDomains: skippedDomains
+            }, () => {
                 console.log(`${isDisabled ? 'Enabled' : 'Disabled'} boycott for ${currentDomain}`);
+                if (skippedDomains[currentDomain]) {
+                    console.log(`Removed ${currentDomain} from temporary skipped list`);
+                }
                 setIsDisabled(!isDisabled);
                 setListSaved(true);
                 setTimeout(() => setListSaved(false), 7000);
