@@ -3,11 +3,17 @@
   "items": [
     {
       "domain": "example.com",
-      "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+      "claim": "Sed ut perspiciatis unde omnis",
+      "description": "",
+      "resources": "",
+      "detail_link": "example.org"
     },
     {
       "domain": "example.net",
-      "description": "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
+      "claim": "",
+      "description": "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+      "resources": "",
+      "detail_link": ""
     }
   ]
 }

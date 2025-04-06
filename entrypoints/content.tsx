@@ -5,7 +5,10 @@ import testBoycottList2 from '@/assets/boycott_lists/test-boycott-list-2.json';
 import "~/assets/tailwind.css";
 import BoycottPopup from '~/components/BoycottPopup';
 
-const defaultBoycottLists: Record<string, { name: string; items: { domain: string; description: string }[] }> = {
+const defaultBoycottLists: Record<string, {
+    name: string;
+    items: { domain: string; claim: string; description: string; resources: string; detail_link: string }[]
+}> = {
     testList1: testBoycottList1,
     testList2: testBoycottList2,
 };
@@ -42,11 +45,17 @@ export default defineContentScript({
 
         const activeLists = Array.isArray(selectedBoycottLists) ? selectedBoycottLists : [];
         if (activeLists.length === 0) {
-            console.info('Extension is active but no boycott lists are selected');
+            console.warn('Extension is active but no boycott lists are selected');
             return;
         }
 
-        const boycottEntries: { source: string; description: string }[] = [];
+        const boycottEntries: {
+            source: string;
+            claim: string;
+            description: string;
+            resources: string;
+            detail_link: string
+        }[] = [];
         const matchingListNames: string[] = [];
 
         for (const listName of activeLists) {
@@ -55,7 +64,13 @@ export default defineContentScript({
                 domain === item.domain || domain.endsWith(`.${item.domain}`)
             );
             if (entry) {
-                boycottEntries.push({source: list.name, description: entry.description});
+                boycottEntries.push({
+                    source: list.name,
+                    claim: entry.claim || '',
+                    description: entry.description || '',
+                    resources: entry.resources || '',
+                    detail_link: entry.detail_link || ''
+                });
                 matchingListNames.push(list.name);
             }
         }

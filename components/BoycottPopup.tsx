@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface BoycottPopupProps {
-    entries: { source: string; description: string }[];
+    entries: { source: string; claim: string; description: string; resources: string; detail_link: string }[];
     matchingListNames: string[];
     onProceed: () => void;
     onClose: () => void;
@@ -22,10 +22,21 @@ const BoycottPopup: React.FC<BoycottPopupProps> = ({entries, matchingListNames, 
                         ))}
                     </div>
                 </div>
-                <ul className="text-base mb-6 space-y-2">
+                <ul className="text-base mb-6 space-y-4">
                     {entries.map((entry, index) => (
                         <li key={index}>
-                            <strong>{entry.source}:</strong> {entry.description}
+                            <strong>{entry.source}</strong>
+                            {entry.claim && <p className="font-semibold">{entry.claim}</p>}
+                            {entry.description && <p>{entry.description}</p>}
+                            {entry.resources && <p className="text-gray-400 italic">Resources: {entry.resources}</p>}
+                            {entry.detail_link && (
+                                <p>
+                                    <a href={entry.detail_link} target="_blank" rel="noopener noreferrer"
+                                       className="text-blue-400 hover:underline">
+                                        More Details
+                                    </a>
+                                </p>
+                            )}
                         </li>
                     ))}
                 </ul>
