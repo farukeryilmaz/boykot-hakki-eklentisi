@@ -11,8 +11,8 @@
 
 Boykot Hakkı eklentisi, kullanıcının etkinleştirdiği boykot listelerine göre bilgilendirme sunar. Eklenti, tamamen
 kullanıcı tarayıcısında çalışır; herhangi bir kişisel veriyi toplamaz, işlemez veya üçüncü taraflarla paylaşmaz. Kaynak
-kodu, Özgür Yazılım lisansı ile açık olarak yayımlanmıştır. Hatalı bilgiler kullanıcı bildirimi ile düzeltilebilir (
-bkz. [İletişim](#iletişim)).
+kodu, Özgür Yazılım lisansı ile açık olarak yayımlanmıştır. Hatalı bilgiler kullanıcı bildirimi ile düzeltilebilir
+(bkz. [İletişim](#iletişim)).
 
 ## Özellikler
 
@@ -20,12 +20,13 @@ bkz. [İletişim](#iletişim)).
 - **Hazır boykot listeleri** ile gelmektedir.
 - Eklenti ve boykot listeleri **varsayılan olarak kapalı** gelmektedir.
     - _Eklentiyi kuran kullanıcılar kendi tercihlerine göre aktif etmelidir._
-- Aktif edilen boykot listeleride bulunan bir websiteye girildiğinde **boykot bilgilendirmesi** yapılmaktadır.
-- Boykotlu **websiteden çıkış** veya **websiteye giriş** yapmak için kullanıcıya seçenek sunulmakta ve kullanıcı inisiyatifine
+- Aktif edilen boykot listelerinde bulunan bir websiteye girildiğinde **boykot bilgilendirmesi** yapılmaktadır.
+- Boykotlu **websiteden çıkış** veya **websiteye giriş** yapmak için kullanıcıya seçenek sunulmakta ve kullanıcı
+  inisiyatifine
   bırakılmaktadır.
     - _Boykotlu websiteye giriş yapıldığında, eklenti ayarlar menüsünde seçilen süre kadar tekrar uyarı göstermez._
-- Boykot listelerindeki boykot etmek istemediğiniz websiteler için **boykotu iptal et** ve **boykotu aktif et** seçeneği
-  sunulmaktadır.
+- Boykot listelerindeki boykot etmek istemediğiniz websiteler için eklenti menüsünde **boykotu iptal et** ve **boykotu
+  aktif et** seçeneği sunulmaktadır.
 - 4 saatte bir boykot listelerini GitHub repo içerisindeki `assets/boycott_lists/...` üzerinden günceller.
     - _Boykot listeleri güncellendikçe mağazalara çok sık yeni eklenti sürümü çıkarmamak için bu şekilde yapılmıştır.
       Güncel listeyi çekemezse, eklenti içerisinde gelen listeyi kullanır._
@@ -51,7 +52,7 @@ Tüm tarayıcılarla uyumlu olması için [WXT](https://wxt.dev/) framework'ü i
 - [Node.js](https://nodejs.org/en/download) (v20.x veya üzeri)
 - [pnpm](https://pnpm.io/installation) (v10.x veya üzeri)
 
-### 2. Depoyu Konlayın ve Bağımlılıkları Yükleyin
+### 2. Depoyu Klonlayın ve Bağımlılıkları Yükleyin
 
 ```bash
 git clone https://github.com/farukeryilmaz/boykot-hakki-eklentisi.git
@@ -68,15 +69,18 @@ pnpm dev
 Bu komut, WXT'nin geliştirme modunu başlatır ve eklentinin kurulu olduğu izole bir **Chrome** oturumu başlatır. Canlı
 yenileme (hot reload) desteğiyle eklentiyi geliştirebilir, test edebilirsiniz.
 
-> Firefox'da çalıştırdırmak için: `pnpm dev:firefox`
+> Firefox'ta çalıştırmak için: `pnpm dev:firefox`
 
 ## Katkıda Bulunmak
 
-_Katkıda bulunmak isteyenler için yönergeler, davranış ve etik kuralları (code of conduct) yazılıyor, beklemede kalın!_
+_Katkıda bulunmak isteyenler için yönergeler, davranış ve etik kuralları (code of conduct) dokümanı yazılıyor, beklemede
+kalın!_
 
 ### Geliştirici Notları
 
-Boykot Listeleri: `assets/boycott_lists/` içindeki JSON dosyalarını düzenleyerek test edebilirsiniz.
+Boykot Listeleri: `assets/boycott_lists/` içindeki JSON dosyalarını düzenleyerek test etmek isterseniz,
+[background.ts](entrypoints/background.ts) dosyasındaki fetch özelliğini kapatınız yoksa sizin güncellediğiniz lokal
+liste yerine GitHub'dan çektiği listeyi kullanır.
 
 ## Yasal Bilgilendirme
 
