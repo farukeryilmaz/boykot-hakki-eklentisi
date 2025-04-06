@@ -33,9 +33,9 @@ const App: React.FC = () => {
     ];
 
     const timeoutOptions = [
-        {id: '1h', name: '1 Hour', ms: 60 * 60 * 1000},
-        {id: '1d', name: '1 Day', ms: 24 * 60 * 60 * 1000},
-        {id: '1w', name: '1 Week', ms: 7 * 24 * 60 * 60 * 1000},
+        {id: '1h', name: '1 Saat', ms: 60 * 60 * 1000},
+        {id: '1d', name: '1 Gün', ms: 24 * 60 * 60 * 1000},
+        {id: '1w', name: '1 Hafta', ms: 7 * 24 * 60 * 60 * 1000},
     ];
 
     const checkBoycottStatus = (domain: string, active: boolean, lists: string[], boycottData: any) => {
@@ -196,10 +196,11 @@ const App: React.FC = () => {
     };
 
     return (
-        <div className="w-75 bg-gray-900 text-white shadow-lg font-sans">
+        <div className="w-80 bg-gray-900 text-white shadow-lg font-sans">
             {/* Current Domain Header */}
             <div className="bg-gray-800 p-1 border-b border-gray-700 flex justify-between items-center">
-                <span className="text-sm font-medium truncate block w-3/4" title={currentDomain}>
+                <span className={`text-sm font-medium truncate block ${isBoycotted && (`w-3/4`)}`}
+                      title={currentDomain}>
                     {currentDomain}
                 </span>
                 {isBoycotted && (
@@ -221,7 +222,7 @@ const App: React.FC = () => {
                                       d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
                         )}
-                        {isDisabled ? 'Enable' : 'Disable'}
+                        {isDisabled ? 'Aktif Et' : 'İptal Et'}
                     </button>
                 )}
             </div>
@@ -234,19 +235,19 @@ const App: React.FC = () => {
                         className={`flex-1 py-2 text-sm ${activeTab === 'lists' ? 'border-b-2 border-blue-500 text-blue-400' : 'text-gray-400 hover:text-gray-200'}`}
                         onClick={() => setActiveTab('lists')}
                     >
-                        Lists
+                        Listeler
                     </button>
                     <button
                         className={`flex-1 py-2 text-sm ${activeTab === 'settings' ? 'border-b-2 border-blue-500 text-blue-400' : 'text-gray-400 hover:text-gray-200'}`}
                         onClick={() => setActiveTab('settings')}
                     >
-                        Settings
+                        Ayarlar
                     </button>
                     <button
                         className={`flex-1 py-2 text-sm ${activeTab === 'about' ? 'border-b-2 border-blue-500 text-blue-400' : 'text-gray-400 hover:text-gray-200'}`}
                         onClick={() => setActiveTab('about')}
                     >
-                        About
+                        Hakkında
                     </button>
                 </div>
 
@@ -271,7 +272,7 @@ const App: React.FC = () => {
                         </div>
 
                         <div className="mb-4">
-                            <h2 className="text-md font-medium text-gray-300 mb-2">Boycott Lists</h2>
+                            <h2 className="text-md font-medium text-gray-300 mb-2">Boykot Listeleri:</h2>
                             <ul className="space-y-2">
                                 {boycottLists.map((list) => (
                                     <li key={list.id}>
@@ -290,13 +291,13 @@ const App: React.FC = () => {
                         </div>
 
                         {isActive && selectedLists.length === 0 && (
-                            <p className="text-yellow-400 text-sm mb-4">Warning: Extension is active but no boycott
-                                lists are selected.</p>
+                            <p className="text-yellow-400 text-sm mb-4"><b>Uyarı:</b> Eklenti aktif ama hiçbir boykot
+                                listesi aktif değil.</p>
                         )}
 
                         {listSaved && (
                             <div className="flex items-center justify-between mb-4">
-                                <span className="text-green-500 text-sm">Saved!</span>
+                                <span className="text-green-500 text-sm">Kaydedildi!</span>
                                 <button
                                     onClick={handleReloadPage}
                                     className="flex items-center text-sm text-blue-400 hover:text-blue-300"
@@ -307,7 +308,7 @@ const App: React.FC = () => {
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
                                               d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9H0m0 6h4.582A8.001 8.001 0 0120 13v5"></path>
                                     </svg>
-                                    Reload Page
+                                    Sayfayı Yenile
                                 </button>
                             </div>
                         )}
@@ -317,7 +318,8 @@ const App: React.FC = () => {
                 {activeTab === 'settings' && (
                     <>
                         <div className="mb-4">
-                            <h2 className="text-md font-medium text-gray-300 mb-2">Skip Timeout</h2>
+                            <h2 className="text-md font-medium text-gray-300 mb-2">Geçici girişin zaman aşım
+                                süresi:</h2>
                             <select
                                 value={pendingTimeout}
                                 onChange={(e) => handleTimeoutSelect(e.target.value)}
@@ -333,22 +335,22 @@ const App: React.FC = () => {
 
                         <div className="flex items-center justify-between mb-4">
                             <button
-                                onClick={handleResetTimeouts}
-                                className="w-full py-2 bg-gray-700 text-white rounded-md hover:bg-gray-700 transition-colors duration-200"
+                                onClick={handleSave}
+                                className="w-full py-2 bg-blue-800 text-white rounded-md hover:bg-blue-700 transition-colors duration-200"
                             >
-                                Reset Timeouts
+                                Kaydet
                             </button>
-                            {isReset && <span className="ml-2 text-green-500 text-sm">Reset!</span>}
+                            {isSaved && <span className="ml-2 text-green-500 text-sm">Kaydedildi!</span>}
                         </div>
 
                         <div className="flex items-center justify-between mb-4">
                             <button
-                                onClick={handleSave}
-                                className="w-full py-2 bg-blue-800 text-white rounded-md hover:bg-blue-700 transition-colors duration-200"
+                                onClick={handleResetTimeouts}
+                                className="w-full py-2 bg-gray-700 text-white rounded-md hover:bg-gray-700 transition-colors duration-200"
                             >
-                                Save All
+                                Geçici Girişleri Sıfırla
                             </button>
-                            {isSaved && <span className="ml-2 text-green-500 text-sm">Saved!</span>}
+                            {isReset && <span className="ml-2 text-green-500 text-sm">Sıfırlandı!</span>}
                         </div>
 
                         <div className="flex items-center justify-between mb-4">
@@ -356,14 +358,14 @@ const App: React.FC = () => {
                                 onClick={handleHardReset}
                                 className="w-full py-2 bg-red-800 text-white rounded-md hover:bg-red-700 transition-colors duration-200"
                             >
-                                Hard Reset
+                                Eklentiyi Sıfırla
                             </button>
-                            {isHardReset && <span className="ml-2 text-green-500 text-sm">Reset!</span>}
+                            {isHardReset && <span className="ml-2 text-green-500 text-sm">Sıfırlandı!</span>}
                         </div>
 
                         {disabledDomains.length > 0 && (
                             <div className="mt-4">
-                                <h2 className="text-md font-medium text-gray-300 mb-2">Disabled Boycott Websites</h2>
+                                <h2 className="text-md font-medium text-gray-300 mb-2">İptal Edilen Boykotlar:</h2>
                                 <ul className="text-sm text-gray-300 max-h-40 overflow-y-auto pl-4">
                                     {disabledDomains.map((domain, index) => (
                                         <li key={index} className="truncate" title={domain}>
@@ -378,13 +380,27 @@ const App: React.FC = () => {
 
                 {activeTab === 'about' && (
                     <div>
-                        <h2 className="text-md font-medium text-gray-300 mb-2">About Boykot Hakkı</h2>
                         <p className="text-sm">
-                            Boykot Hakkı is a browser extension that warns you when visiting websites from selected
-                            boycott lists.
-                            Customize your experience by choosing lists and setting skip timeouts.
+                            Boykot Hakkı eklentisi, kullanıcının etkinleştirdiği boykot listelerine göre bilgilendirme
+                            sunar. Eklenti, tamamen kullanıcı tarayıcısında çalışır; herhangi bir kişisel veriyi
+                            toplamaz, işlemez veya üçüncü taraflarla paylaşmaz. Kaynak kodu, Özgür Yazılım lisansı ile
+                            açık olarak GitHub'da yayımlanmıştır. Hatalı bilgiler kullanıcı bildirimi ile
+                            düzeltilebilir.
                         </p>
-                        <p className="text-sm mt-2">Version: 0.1.0</p>
+                        <h2 className="text-lg font-medium text-gray-300 mb-2 mt-4">Yasal Bilgilendirme</h2>
+                        <p className="text-sm mt-2">Tüketiciler, 6502 sayılı Tüketicinin Korunması Hakkında Kanun ve
+                            Anayasa’nın 26. maddesi uyarınca, satın alıp almama hakkına ve düşünce açıklama ve yayma
+                            özgürlüğüne sahiptir. Bu kapsamda, bireysel veya toplu tüketici boykotu hukuken mümkündür.
+                            Eklenti, bu hak doğrultusunda kullanıcıya bilgi verir; herhangi bir kuruluş veya ürün
+                            hakkında yönlendirme veya zorlama içermez.</p>
+                        <p className="text-sm mt-2">Eklenti yalnızca tüketici boykotunu destekler; şirketler arası
+                            ticari boykotu içermez. Kamu kurumlarına yönelik listeler, yalnızca kullanıcı talebiyle
+                            görünür ve içeriğinde şiddet, tehdit veya hakaret bulundurmaz; 5237 sayılı Türk Ceza
+                            Kanunu’nun 125 ve 301. maddeleri kapsamında suç teşkil eden içeriklere izin verilmez.</p>
+                        <p className="text-sm mt-2">
+                            Bu eklenti, ifade özgürlüğü ve tüketicinin bilgiye dayalı tercih hakkını destekleyen yasal
+                            bir araçtır. Kullanıcı dilerse kendi aktif ettiği tüm boykot listelerini ve eklentiyi devre
+                            dışı bırakabilir.</p>
                     </div>
                 )}
             </div>

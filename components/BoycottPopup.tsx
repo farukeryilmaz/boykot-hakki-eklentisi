@@ -15,7 +15,7 @@ const BoycottPopup: React.FC<BoycottPopupProps> = ({entries, matchingListNames, 
             <div
                 className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4 z-[2147483647]">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-bold text-red-500">Boycott Alert</h2>
+                    <h2 className="text-xl font-bold text-red-500">Boykot Bilgilendirme</h2>
                     <div className="text-sm text-gray-300">
                         {matchingListNames.map((name) => (
                             <span key={name} className="block">{name}</span>
@@ -28,12 +28,12 @@ const BoycottPopup: React.FC<BoycottPopupProps> = ({entries, matchingListNames, 
                             <strong>{entry.source}</strong>
                             {entry.claim && <p className="font-semibold">{entry.claim}</p>}
                             {entry.description && <p>{entry.description}</p>}
-                            {entry.resources && <p className="text-gray-400 italic">Resources: {entry.resources}</p>}
+                            {entry.resources && <p className="text-gray-400 italic">Kaynaklar: {entry.resources}</p>}
                             {entry.detail_link && (
                                 <p>
                                     <a href={entry.detail_link} target="_blank" rel="noopener noreferrer"
                                        className="text-blue-400 hover:underline">
-                                        More Details
+                                        Detaylı Bilgi
                                     </a>
                                 </p>
                             )}
@@ -45,13 +45,13 @@ const BoycottPopup: React.FC<BoycottPopupProps> = ({entries, matchingListNames, 
                         onClick={onProceed}
                         className="flex-1 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors duration-200"
                     >
-                        Proceed Anyway
+                        Geçici Giriş Yap
                     </button>
                     <button
                         onClick={onClose}
                         className="flex-1 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors duration-200"
                     >
-                        {canGoBack ? 'Go Back' : 'Close Website'}
+                        {canGoBack ? 'Geri Dön' : 'Sayfayı Kapat'}
                     </button>
                 </div>
             </div>
