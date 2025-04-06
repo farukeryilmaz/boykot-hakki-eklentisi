@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 
 interface BoycottPopupProps {
     entries: { source: string; claim: string; description: string; resources: string; detail_link: string }[];
@@ -9,6 +9,14 @@ interface BoycottPopupProps {
 }
 
 const BoycottPopup: React.FC<BoycottPopupProps> = ({entries, matchingListNames, onProceed, onClose, canGoBack}) => {
+    const [openAccordions, setOpenAccordions] = useState<boolean[]>(new Array(entries.length).fill(false));
+
+    const toggleAccordion = (index: number) => {
+        setOpenAccordions((prev) =>
+            prev.map((isOpen, i) => (i === index ? !isOpen : isOpen))
+        );
+    };
+
     return (
         <>
             <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-md z-[2147483646]"/>
@@ -22,24 +30,57 @@ const BoycottPopup: React.FC<BoycottPopupProps> = ({entries, matchingListNames, 
                         ))}
                     </div>
                 </div>
-                <ul className="text-base mb-6 space-y-4">
+                <div className="mb-6 space-y-2">
                     {entries.map((entry, index) => (
-                        <li key={index}>
-                            <strong>{entry.source}</strong>
-                            {entry.claim && <p className="font-semibold">{entry.claim}</p>}
-                            {entry.description && <p>{entry.description}</p>}
-                            {entry.resources && <p className="text-gray-400 italic">Kaynaklar: {entry.resources}</p>}
-                            {entry.detail_link && (
-                                <p>
-                                    <a href={entry.detail_link} target="_blank" rel="noopener noreferrer"
-                                       className="text-blue-400 hover:underline">
-                                        Detaylı Bilgi
-                                    </a>
-                                </p>
+                        <div
+                            key={index}
+                            className="border border-solid !border-gray-700 rounded-md hover:!border-gray-700 hover:bg-gray-700 transition-colors duration-200"
+                        >
+                            <button
+                                onClick={() => toggleAccordion(index)}
+                                className="w-full flex items-center justify-between py-2 px-3 text-base font-semibold text-gray-200 hover:text-white focus:outline-none"
+                            >
+                                <div className="flex items-center">
+                                    <span
+                                        className="w-5 h-5 flex items-center justify-center bg-gray-600 rounded-full mr-2 text-sm">?</span>
+                                    <span className="text-sm text-gray-300">Boykot İddiası <span
+                                        className="text-xs text-gray-300">({entry.source})</span></span>
+                                </div>
+                                <svg
+                                    className={`w-5 h-5 transition-transform ${openAccordions[index] ? 'rotate-180' : ''}`}
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                                          d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </button>
+                            {openAccordions[index] && (
+                                <div className="text-sm text-gray-300 pb-2 px-3">
+                                    {entry.claim && <p><span className="font-semibold">İddia: </span>{entry.claim}</p>}
+                                    {entry.description &&
+                                        <p><span className="font-semibold">Açıklama: </span>{entry.description}</p>}
+                                    {entry.resources && <p className="text-gray-400 italic"><span
+                                        className="font-semibold">Kaynaklar: </span>{entry.resources}</p>}
+                                    {entry.detail_link && (
+                                        <p>
+                                            <a
+                                                href={entry.detail_link}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-blue-400 hover:underline"
+                                            >
+                                                Detaylı Bilgi İçin Tıklayınız
+                                            </a>
+                                        </p>
+                                    )}
+                                </div>
                             )}
-                        </li>
+                        </div>
                     ))}
-                </ul>
+                </div>
                 <div className="flex space-x-4">
                     <button
                         onClick={onProceed}
