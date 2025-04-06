@@ -29,8 +29,8 @@ export default defineContentScript({
             skippedDomains,
             cachedBoycottLists
         } = await chrome.storage.sync.get({
-            isActive: true,
-            selectedBoycottLists: ['testList1'],
+            isActive: false,
+            selectedBoycottLists: [],
             timeoutDuration: '1h',
             skippedDomains: {},
             cachedBoycottLists: defaultBoycottLists,
@@ -40,7 +40,12 @@ export default defineContentScript({
             return;
         }
 
-        const activeLists = Array.isArray(selectedBoycottLists) ? selectedBoycottLists : ['testList1'];
+        const activeLists = Array.isArray(selectedBoycottLists) ? selectedBoycottLists : [];
+        if (activeLists.length === 0) {
+            console.info('Extension is active but no boycott lists are selected');
+            return;
+        }
+
         const boycottEntries: { source: string; description: string }[] = [];
         const matchingListNames: string[] = [];
 

@@ -1,9 +1,9 @@
 import React, {useState, useEffect} from 'react';
 
 const App: React.FC = () => {
-    const [isActive, setIsActive] = useState<boolean>(true);
-    const [selectedLists, setSelectedLists] = useState<string[]>(['testList1']);
-    const [pendingLists, setPendingLists] = useState<string[]>(['testList1']);
+    const [isActive, setIsActive] = useState<boolean>(false);
+    const [selectedLists, setSelectedLists] = useState<string[]>([]);
+    const [pendingLists, setPendingLists] = useState<string[]>([]);
     const [isSaved, setIsSaved] = useState<boolean>(false);
     const [timeoutDuration, setTimeoutDuration] = useState<string>('1h');
     const [pendingTimeout, setPendingTimeout] = useState<string>('1h');
@@ -24,8 +24,8 @@ const App: React.FC = () => {
     useEffect(() => {
         chrome.storage.sync.get(['isActive', 'selectedBoycottLists', 'timeoutDuration', 'cachedBoycottLists'], (data) => {
             const storageData = data || {};
-            const savedActive = 'isActive' in storageData && typeof storageData.isActive === 'boolean' ? storageData.isActive : true;
-            const savedLists = Array.isArray(storageData.selectedBoycottLists) && storageData.selectedBoycottLists.length > 0 ? storageData.selectedBoycottLists : ['testList1'];
+            const savedActive = 'isActive' in storageData && typeof storageData.isActive === 'boolean' ? storageData.isActive : false;
+            const savedLists = Array.isArray(storageData.selectedBoycottLists) ? storageData.selectedBoycottLists : [];
             const savedTimeout = storageData.timeoutDuration || '1h';
             const cachedLists = storageData.cachedBoycottLists || {};
 
@@ -104,6 +104,11 @@ const App: React.FC = () => {
                     ></div>
                 </label>
             </div>
+
+            {isActive && pendingLists.length === 0 && (
+                <p className="text-yellow-400 text-sm mb-4">Warning: Extension is active but no boycott lists are
+                    selected.</p>
+            )}
 
             <div className="mb-4">
                 <h2 className="text-md font-medium text-gray-300 mb-2">Boycott Lists</h2>
