@@ -30,13 +30,15 @@ export default defineContentScript({
             selectedBoycottLists,
             timeoutDuration,
             skippedDomains,
-            cachedBoycottLists
+            cachedBoycottLists,
+            disabledBoycottDomains
         } = await chrome.storage.sync.get({
             isActive: false,
             selectedBoycottLists: [],
             timeoutDuration: '1h',
             skippedDomains: {},
             cachedBoycottLists: defaultBoycottLists,
+            disabledBoycottDomains: {}
         });
 
         if (!isActive) {
@@ -60,7 +62,7 @@ export default defineContentScript({
 
         for (const listName of activeLists) {
             const list = cachedBoycottLists[listName] || defaultBoycottLists[listName] || {name: listName, items: []};
-            const entry = list.items.find((item: { domain: string; }) =>
+            const entry = list.items.find((item: { domain: string }) =>
                 domain === item.domain || domain.endsWith(`.${item.domain}`)
             );
             if (entry) {
@@ -78,8 +80,9 @@ export default defineContentScript({
         if (boycottEntries.length > 0) {
             const now = Date.now();
             const skipData = skippedDomains[domain];
+            const isDisabled = disabledBoycottDomains[domain];
 
-            if (skipData && now < skipData) {
+            if (isDisabled || (skipData && now < skipData)) {
                 return;
             }
 

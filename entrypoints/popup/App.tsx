@@ -1,4 +1,14 @@
 import React, {useState, useEffect} from 'react';
+import testBoycottList1 from '@/assets/boycott_lists/test-boycott-list-1.json';
+import testBoycottList2 from '@/assets/boycott_lists/test-boycott-list-2.json';
+
+const defaultBoycottLists: Record<string, {
+    name: string;
+    items: { domain: string; claim: string; description: string; resources: string; detail_link: string }[]
+}> = {
+    testList1: testBoycottList1,
+    testList2: testBoycottList2,
+};
 
 const App: React.FC = () => {
     const [isActive, setIsActive] = useState<boolean>(false);
@@ -11,6 +21,9 @@ const App: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'lists' | 'settings' | 'about'>('lists');
     const [listSaved, setListSaved] = useState<boolean>(false);
     const [currentDomain, setCurrentDomain] = useState<string>('');
+    const [isBoycotted, setIsBoycotted] = useState<boolean>(false);
+    const [isDisabled, setIsDisabled] = useState<boolean>(false);
+    const [cachedBoycottLists, setCachedBoycottLists] = useState<any>(defaultBoycottLists); // Default to local lists
 
     const defaultLists = [
         {id: 'testList1', name: 'Test Boycott List - 1'},
@@ -23,18 +36,31 @@ const App: React.FC = () => {
         {id: '1w', name: '1 Week', ms: 7 * 24 * 60 * 60 * 1000},
     ];
 
+    const checkBoycottStatus = (domain: string, active: boolean, lists: string[], boycottData: any) => {
+        const isInBoycottList = lists.some((listId) => {
+            const list = boycottData[listId] || defaultBoycottLists[listId] || {items: []}; // Fallback to local
+            return list.items?.some((item: { domain: string }) =>
+                domain === item.domain || domain.endsWith(`.${item.domain}`)
+            );
+        });
+        console.log(`Checking boycott status for ${domain}: isActive=${active}, isInBoycottList=${isInBoycottList}, lists=${lists}, cachedLists=${JSON.stringify(boycottData)}`);
+        setIsBoycotted(active && isInBoycottList);
+    };
+
     useEffect(() => {
-        chrome.storage.sync.get(['isActive', 'selectedBoycottLists', 'timeoutDuration', 'cachedBoycottLists'], (data) => {
+        chrome.storage.sync.get(['isActive', 'selectedBoycottLists', 'timeoutDuration', 'cachedBoycottLists', 'disabledBoycottDomains'], (data) => {
             const storageData = data || {};
             const savedActive = 'isActive' in storageData && typeof storageData.isActive === 'boolean' ? storageData.isActive : false;
             const savedLists = Array.isArray(storageData.selectedBoycottLists) ? storageData.selectedBoycottLists : [];
             const savedTimeout = storageData.timeoutDuration || '1h';
-            const cachedLists = storageData.cachedBoycottLists || {};
+            const cachedLists = storageData.cachedBoycottLists || defaultBoycottLists; // Fallback to local
+            const disabledDomains = storageData.disabledBoycottDomains || {};
 
             setIsActive(savedActive);
             setSelectedLists(savedLists);
             setTimeoutDuration(savedTimeout);
             setPendingTimeout(savedTimeout);
+            setCachedBoycottLists(cachedLists);
 
             const listOptions = Object.keys(cachedLists).length > 0
                 ? Object.keys(cachedLists).map((key) => ({
@@ -43,16 +69,20 @@ const App: React.FC = () => {
                 }))
                 : defaultLists;
             setBoycottLists(listOptions);
-        });
 
-        // Fetch current domain
-        chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-            if (tabs[0]?.url) {
-                const url = new URL(tabs[0].url);
-                setCurrentDomain(url.hostname);
-            } else {
-                setCurrentDomain('Unknown');
-            }
+            chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+                if (tabs[0]?.url) {
+                    const url = new URL(tabs[0].url);
+                    const domain = url.hostname;
+                    setCurrentDomain(domain);
+                    setIsDisabled(!!disabledDomains[domain]);
+                    checkBoycottStatus(domain, savedActive, savedLists, cachedLists);
+                } else {
+                    setCurrentDomain('Unknown');
+                    setIsBoycotted(false);
+                    setIsDisabled(false);
+                }
+            });
         });
     }, []);
 
@@ -63,6 +93,7 @@ const App: React.FC = () => {
             console.log(`Extension ${newActiveState ? 'activated' : 'deactivated'}`);
             setListSaved(true);
             setTimeout(() => setListSaved(false), 10000);
+            checkBoycottStatus(currentDomain, newActiveState, selectedLists, cachedBoycottLists);
         });
     };
 
@@ -75,6 +106,24 @@ const App: React.FC = () => {
             console.log(`Updated boycott lists: ${newLists}`);
             setListSaved(true);
             setTimeout(() => setListSaved(false), 10000);
+            checkBoycottStatus(currentDomain, isActive, newLists, cachedBoycottLists);
+        });
+    };
+
+    const handleToggleBoycott = () => {
+        chrome.storage.sync.get('disabledBoycottDomains', (data) => {
+            const disabledDomains = data.disabledBoycottDomains || {};
+            if (isDisabled) {
+                delete disabledDomains[currentDomain];
+            } else {
+                disabledDomains[currentDomain] = true;
+            }
+            chrome.storage.sync.set({disabledBoycottDomains: disabledDomains}, () => {
+                console.log(`${isDisabled ? 'Enabled' : 'Disabled'} boycott for ${currentDomain}`);
+                setIsDisabled(!isDisabled);
+                setListSaved(true);
+                setTimeout(() => setListSaved(false), 7000);
+            });
         });
     };
 
@@ -111,10 +160,32 @@ const App: React.FC = () => {
     return (
         <div className="w-75 bg-gray-900 text-white shadow-lg font-sans">
             {/* Current Domain Header */}
-            <div className="bg-gray-800 p-1 border-b border-gray-700">
-                <span className="text-sm font-medium truncate block" title={currentDomain}>
+            <div className="bg-gray-800 p-1 border-b border-gray-700 flex justify-between items-center">
+                <span className="text-sm font-medium truncate block w-3/4" title={currentDomain}>
                     {currentDomain}
                 </span>
+                {isBoycotted && (
+                    <button
+                        onClick={handleToggleBoycott}
+                        className={`flex items-center text-xs px-2 py-1 rounded ${isDisabled ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white`}
+                        title={isDisabled ? 'Enable boycott for this site' : 'Disable boycott for this site'}
+                    >
+                        {isDisabled ? (
+                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                                      d="M5 13l4 4L19 7"></path>
+                            </svg>
+                        ) : (
+                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                                      d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        )}
+                        {isDisabled ? 'Enable' : 'Disable'}
+                    </button>
+                )}
             </div>
 
             {/* Main Content */}
@@ -248,8 +319,8 @@ const App: React.FC = () => {
                     <div>
                         <h2 className="text-md font-medium text-gray-300 mb-2">About Boykot Hakkı</h2>
                         <p className="text-sm">
-                            Boykot Hakkı is a browser extension that warns you when visiting websites from selected boycott
-                            lists.
+                            Boykot Hakkı is a browser extension that warns you when visiting websites from selected
+                            boycott lists.
                             Customize your experience by choosing lists and setting skip timeouts.
                         </p>
                         <p className="text-sm mt-2">Version: 0.1.0</p>
