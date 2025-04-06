@@ -196,7 +196,7 @@ const App: React.FC = () => {
     };
 
     return (
-        <div className="w-80 bg-gray-900 text-white shadow-lg font-sans">
+        <div className="w-80 bg-gray-900 text-white shadow-lg font-sans flex flex-col">
             {/* Current Domain Header */}
             <div className="bg-gray-800 p-1 border-b border-gray-700 flex justify-between items-center">
                 <span className={`text-sm font-medium truncate block ${isBoycotted && (`w-3/4`)}`}
@@ -228,7 +228,7 @@ const App: React.FC = () => {
             </div>
 
             {/* Main Content */}
-            <div className="p-4">
+            <div className="p-4 flex-1">
                 {/* Tab Navigation */}
                 <div className="flex justify-between mb-4 border-b border-gray-700">
                     <button
@@ -400,9 +400,50 @@ const App: React.FC = () => {
                         <p className="text-sm mt-2">
                             Bu eklenti, ifade özgürlüğü ve tüketicinin bilgiye dayalı tercih hakkını destekleyen yasal
                             bir araçtır. Kullanıcı dilerse kendi aktif ettiği tüm boykot listelerini ve eklentiyi devre
-                            dışı bırakabilir.</p>
+                            dışı bırakabilir.
+                        </p>
                     </div>
                 )}
+            </div>
+
+            {/* Footer Strip */}
+            <div
+                className="bg-gray-800 border-t border-gray-700 p-1 text-xs text-gray-400 flex justify-between items-center">
+                <a
+                    href="https://github.com/farukeryilmaz/boykot-hakki-eklentisi/issues"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center px-2 py-1 font-semibold bg-gray-700 rounded-md hover:bg-gray-600 transition-colors duration-200"
+                >
+                    <svg
+                        className="w-4 h-4 mr-1"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                    >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                              d="M12 8v4m0 4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"/>
+                    </svg>
+                    <span>Hata Bildir</span>
+                </a>
+                <a
+                    href="https://github.com/farukeryilmaz/boykot-hakki-eklentisi"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center px-2 py-1 font-semibold bg-gray-700 rounded-md hover:bg-gray-600 transition-colors duration-200"
+                >
+                    <svg
+                        className="w-4 h-4 mr-1"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                    >
+                        <path
+                            d="M12 0C5.373 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.6.111.793-.26.793-.577v-2.234c-3.338.724-4.043-1.607-4.043-1.607-.546-1.387-1.333-1.757-1.333-1.757-1.087-.744.083-.729.083-.729 1.205.085 1.838 1.236 1.838 1.236 1.07 1.834 2.807 1.305 3.492.997.107-.776.418-1.305.762-1.605-2.665-.308-5.467-1.334-5.467-5.93 0-1.31.467-2.381 1.235-3.221-.123-.308-.535-1.529.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02-.006 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.647.241 2.868.118 3.176.77.84 1.234 1.911 1.234 3.221 0 4.61-2.807 5.62-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                    <span>Kaynak Kod</span>
+                </a>
             </div>
         </div>
     );
