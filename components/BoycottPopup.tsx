@@ -21,7 +21,7 @@ const BoycottPopup: React.FC<BoycottPopupProps> = ({entries, matchingListNames, 
         <>
             <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-md z-[2147483646]"/>
             <div
-                className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4 z-[2147483647]">
+                className="font-sans fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4 z-[2147483647]">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold text-red-500">Boykot Bilgilendirme</h2>
                     <div className="text-sm text-gray-300">

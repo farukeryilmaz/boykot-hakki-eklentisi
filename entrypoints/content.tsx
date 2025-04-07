@@ -1,4 +1,3 @@
-import {createShadowRootUi} from 'wxt/client';
 import ReactDOM from 'react-dom/client';
 import testBoycottList1 from '@/assets/boycott_lists/test-boycott-list-1.json';
 import testBoycottList2 from '@/assets/boycott_lists/test-boycott-list-2.json';
