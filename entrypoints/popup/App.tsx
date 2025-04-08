@@ -15,8 +15,11 @@ const App: React.FC = () => {
     const [selectedLists, setSelectedLists] = useState<string[]>([]);
     const [timeoutDuration, setTimeoutDuration] = useState<string>('1h');
     const [pendingTimeout, setPendingTimeout] = useState<string>('1h');
+    const [isFetchActive, setIsFetchActive] = useState<boolean>(true);
+    const [pendingFetchInterval, setPendingFetchInterval] = useState<string>('12h');
     const [isSaved, setIsSaved] = useState<boolean>(false);
     const [isReset, setIsReset] = useState<boolean>(false);
+    const [fetchStatus, setFetchStatus] = useState<string | null>(null);
     const [boycottLists, setBoycottLists] = useState<{ id: string; name: string }[]>([]);
     const [activeTab, setActiveTab] = useState<'lists' | 'settings' | 'about'>('lists');
     const [listSaved, setListSaved] = useState<boolean>(false);
@@ -38,6 +41,12 @@ const App: React.FC = () => {
         {id: '1w', name: '1 Hafta', ms: 7 * 24 * 60 * 60 * 1000},
     ];
 
+    const fetchIntervalOptions = [
+        {id: '4h', name: '4 Saat', ms: 4 * 60 * 60 * 1000},
+        {id: '12h', name: '12 Saat', ms: 12 * 60 * 60 * 1000},
+        {id: '24h', name: '24 Saat', ms: 24 * 60 * 60 * 1000},
+    ];
+
     const checkBoycottStatus = (domain: string, active: boolean, lists: string[], boycottData: any) => {
         const isInBoycottList = lists.some((listId) => {
             const list = boycottData[listId] || defaultBoycottLists[listId] || {items: []};
@@ -45,16 +54,18 @@ const App: React.FC = () => {
                 domain === item.domain || domain.endsWith(`.${item.domain}`)
             );
         });
-        console.log(`Checking boycott status for ${domain}: isActive=${active}, isInBoycottList=${isInBoycottList}, lists=${lists}, cachedLists=${JSON.stringify(boycottData)}`);
+        console.log(`Checking boycott status for ${domain}: isActive=${active}, isInBoycottList=${isInBoycottList}`);
         setIsBoycotted(active && isInBoycottList);
     };
 
     useEffect(() => {
-        chrome.storage.sync.get(['isActive', 'selectedBoycottLists', 'timeoutDuration', 'cachedBoycottLists', 'disabledBoycottDomains'], (data) => {
+        chrome.storage.sync.get(['isActive', 'selectedBoycottLists', 'timeoutDuration', 'cachedBoycottLists', 'disabledBoycottDomains', 'fetchActive', 'fetchInterval', 'lastFetchTime'], (data) => {
             const storageData = data || {};
             const savedActive = 'isActive' in storageData && typeof storageData.isActive === 'boolean' ? storageData.isActive : false;
             const savedLists = Array.isArray(storageData.selectedBoycottLists) ? storageData.selectedBoycottLists : [];
             const savedTimeout = storageData.timeoutDuration || '1h';
+            const savedFetchActive = 'fetchActive' in storageData && typeof storageData.fetchActive === 'boolean' ? storageData.fetchActive : true;
+            const savedFetchInterval = storageData.fetchInterval || '12h';
             const cachedLists = storageData.cachedBoycottLists || defaultBoycottLists;
             const disabledDomainsData = storageData.disabledBoycottDomains || {};
 
@@ -62,6 +73,8 @@ const App: React.FC = () => {
             setSelectedLists(savedLists);
             setTimeoutDuration(savedTimeout);
             setPendingTimeout(savedTimeout);
+            setIsFetchActive(savedFetchActive);
+            setPendingFetchInterval(savedFetchInterval);
             setCachedBoycottLists(cachedLists);
             setDisabledDomains(Object.keys(disabledDomainsData));
 
@@ -149,10 +162,25 @@ const App: React.FC = () => {
         setIsSaved(false);
     };
 
+    const handleFetchToggle = () => {
+        setIsFetchActive(!isFetchActive);
+        setIsSaved(false);
+    };
+
+    const handleFetchIntervalSelect = (intervalId: string) => {
+        setPendingFetchInterval(intervalId);
+        setIsSaved(false);
+    };
+
     const handleSave = () => {
         setTimeoutDuration(pendingTimeout);
-        chrome.storage.sync.set({timeoutDuration: pendingTimeout}, () => {
-            console.log(`Saved timeout: ${pendingTimeout}`);
+        chrome.storage.sync.set({
+            timeoutDuration: pendingTimeout,
+            fetchActive: isFetchActive,
+            fetchInterval: pendingFetchInterval,
+            lastFetchTime: Date.now() // Update last fetch time on save if active
+        }, () => {
+            console.log(`Saved settings: timeout=${pendingTimeout}, fetchActive=${isFetchActive}, fetchInterval=${pendingFetchInterval}`);
             setIsSaved(true);
             setTimeout(() => setIsSaved(false), 2000);
         });
@@ -180,18 +208,47 @@ const App: React.FC = () => {
             timeoutDuration: '1h',
             disabledBoycottDomains: {},
             selectedBoycottLists: [],
-            isActive: false
+            isActive: false,
+            fetchActive: true,
+            fetchInterval: '12h',
+            lastFetchTime: 0
         }, () => {
             console.log('Hard reset completed: all settings reverted to defaults');
             setIsActive(false);
             setSelectedLists([]);
             setTimeoutDuration('1h');
             setPendingTimeout('1h');
+            setIsFetchActive(true);
+            setPendingFetchInterval('12h');
             setDisabledDomains([]);
             setIsBoycotted(false);
             setIsDisabled(false);
             setIsHardReset(true);
             setTimeout(() => setIsHardReset(false), 2000);
+        });
+    };
+
+    const handleFetchNow = () => {
+        setFetchStatus('Güncelleniyor...');
+        chrome.runtime.sendMessage({action: 'fetchBoycottListsNow'}, (response) => {
+            if (chrome.runtime.lastError) {
+                console.error('Message error:', chrome.runtime.lastError);
+                setFetchStatus('Güncelleme başarısız!');
+            } else if (response && response.success) {
+                setFetchStatus('Başarıyla güncellendi!');
+                chrome.storage.sync.get(['cachedBoycottLists'], (data) => {
+                    const updatedLists = data.cachedBoycottLists || defaultBoycottLists;
+                    setCachedBoycottLists(updatedLists);
+                    setBoycottLists(Object.keys(updatedLists).map((key) => ({
+                        id: key,
+                        name: updatedLists[key].name || key.charAt(0).toUpperCase() + key.slice(1),
+                    })));
+                    checkBoycottStatus(currentDomain, isActive, selectedLists, updatedLists);
+                });
+            } else {
+                setFetchStatus('Güncelleme başarısız!');
+            }
+            setTimeout(() => setFetchStatus(null), 3000);
         });
     };
 
@@ -317,54 +374,97 @@ const App: React.FC = () => {
 
                 {activeTab === 'settings' && (
                     <>
-                        <div className="mb-4">
-                            <h2 className="text-md font-medium text-gray-300 mb-2">Geçici girişin zaman aşım
-                                süresi:</h2>
-                            <select
-                                value={pendingTimeout}
-                                onChange={(e) => handleTimeoutSelect(e.target.value)}
-                                className="w-full p-2 bg-gray-800 text-white border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                {timeoutOptions.map((option) => (
-                                    <option key={option.id} value={option.id} className="bg-gray-800">
-                                        {option.name}
-                                    </option>
-                                ))}
-                            </select>
+                        {/* Timeout Group */}
+                        <div className="mb-4 p-3 bg-gray-800 rounded-md">
+                            <h2 className="text-md font-medium text-gray-300 mb-2">Geçici Giriş Zaman Aşımı</h2>
+                            <div className="flex items-center space-x-4">
+                                <select
+                                    value={pendingTimeout}
+                                    onChange={(e) => handleTimeoutSelect(e.target.value)}
+                                    className="flex-1 p-2 bg-gray-700 text-white border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    {timeoutOptions.map((option) => (
+                                        <option key={option.id} value={option.id} className="bg-gray-700">
+                                            {option.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <button
+                                    onClick={handleResetTimeouts}
+                                    className="flex-1 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors duration-200"
+                                >
+                                    Geçici Girişleri Sıfırla
+                                </button>
+                            </div>
+                            {isReset && <span className="text-green-500 text-sm mt-2">Sıfırlandı!</span>}
                         </div>
 
-                        <div className="flex items-center justify-between mb-4">
+                        {/* Fetch Group */}
+                        <div className="mb-4 p-3 bg-gray-800 rounded-md">
+                            <h2 className="text-md font-medium text-gray-300 mb-2">Periyodik Boykot Listesi
+                                Güncelleme</h2>
+                            <div className="flex items-center space-x-4 mb-3">
+                                <label className="flex items-center space-x-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={isFetchActive}
+                                        onChange={handleFetchToggle}
+                                        className="sr-only peer"
+                                    />
+                                    <span className="text-sm text-gray-300">{isFetchActive ? 'Aktif' : 'Pasif'}</span>
+                                    <div
+                                        className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-600 dark:peer-checked:bg-green-600"></div>
+                                </label>
+                                <select
+                                    value={pendingFetchInterval}
+                                    onChange={(e) => handleFetchIntervalSelect(e.target.value)}
+                                    className="flex-1 p-2 bg-gray-700 text-white border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    {fetchIntervalOptions.map((option) => (
+                                        <option key={option.id} value={option.id} className="bg-gray-700">
+                                            {option.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <button
+                                onClick={handleFetchNow}
+                                className="w-full py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center"
+                            >
+                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9H0m0 6h4.582A8.001 8.001 0 0120 13v5"></path>
+                                </svg>
+                                Şimdi Güncelle
+                            </button>
+                            {fetchStatus && <span
+                                className={`text-sm mt-2 ${fetchStatus.includes('Başarıyla') ? 'text-green-500' : 'text-red-500'}`}>{fetchStatus}</span>}
+                        </div>
+
+                        {/* Save and Reset Buttons */}
+                        <div className="flex space-x-4">
                             <button
                                 onClick={handleSave}
-                                className="w-full py-2 bg-blue-800 text-white rounded-md hover:bg-blue-700 transition-colors duration-200"
+                                className="flex-1 py-2 bg-blue-800 text-white rounded-md hover:bg-blue-700 transition-colors duration-200"
                             >
                                 Kaydet
                             </button>
-                            {isSaved && <span className="ml-2 text-green-500 text-sm">Kaydedildi!</span>}
-                        </div>
-
-                        <div className="flex items-center justify-between mb-4">
-                            <button
-                                onClick={handleResetTimeouts}
-                                className="w-full py-2 bg-gray-700 text-white rounded-md hover:bg-gray-700 transition-colors duration-200"
-                            >
-                                Geçici Girişleri Sıfırla
-                            </button>
-                            {isReset && <span className="ml-2 text-green-500 text-sm">Sıfırlandı!</span>}
-                        </div>
-
-                        <div className="flex items-center justify-between mb-4">
                             <button
                                 onClick={handleHardReset}
-                                className="w-full py-2 bg-red-800 text-white rounded-md hover:bg-red-700 transition-colors duration-200"
+                                className="flex-1 py-2 bg-red-800 text-white rounded-md hover:bg-red-700 transition-colors duration-200"
                             >
                                 Eklentiyi Sıfırla
                             </button>
-                            {isHardReset && <span className="ml-2 text-green-500 text-sm">Sıfırlandı!</span>}
+                        </div>
+                        <div className="flex justify-between mt-2">
+                            {isSaved && <span className="text-green-500 text-sm">Kaydedildi!</span>}
+                            {isHardReset && <span className="text-green-500 text-sm">Sıfırlandı!</span>}
                         </div>
 
+                        {/* Disabled Domains */}
                         {disabledDomains.length > 0 && (
-                            <div className="mt-4">
+                            <div className="mt-2">
                                 <h2 className="text-md font-medium text-gray-300 mb-2">İptal Edilen Boykotlar:</h2>
                                 <ul className="text-sm text-gray-300 max-h-40 overflow-y-auto pl-4">
                                     {disabledDomains.map((domain, index) => (
@@ -415,13 +515,8 @@ const App: React.FC = () => {
                     rel="noopener noreferrer"
                     className="flex items-center px-2 py-1 font-semibold bg-gray-700 rounded-md hover:bg-gray-600 transition-colors duration-200"
                 >
-                    <svg
-                        className="w-4 h-4 mr-1"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                    >
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                         xmlns="http://www.w3.org/2000/svg">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
                               d="M12 8v4m0 4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"/>
                     </svg>
@@ -433,12 +528,8 @@ const App: React.FC = () => {
                     rel="noopener noreferrer"
                     className="flex items-center px-2 py-1 font-semibold bg-gray-700 rounded-md hover:bg-gray-600 transition-colors duration-200"
                 >
-                    <svg
-                        className="w-4 h-4 mr-1"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                    >
+                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24"
+                         xmlns="http://www.w3.org/2000/svg">
                         <path
                             d="M12 0C5.373 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.6.111.793-.26.793-.577v-2.234c-3.338.724-4.043-1.607-4.043-1.607-.546-1.387-1.333-1.757-1.333-1.757-1.087-.744.083-.729.083-.729 1.205.085 1.838 1.236 1.838 1.236 1.07 1.834 2.807 1.305 3.492.997.107-.776.418-1.305.762-1.605-2.665-.308-5.467-1.334-5.467-5.93 0-1.31.467-2.381 1.235-3.221-.123-.308-.535-1.529.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02-.006 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.647.241 2.868.118 3.176.77.84 1.234 1.911 1.234 3.221 0 4.61-2.807 5.62-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
                     </svg>
