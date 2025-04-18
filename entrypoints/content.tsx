@@ -31,7 +31,7 @@ export default defineContentScript({
             skippedDomains,
             cachedBoycottLists,
             disabledBoycottDomains
-        } = await chrome.storage.sync.get({
+        } = await browser.storage.sync.get({
             isActive: false,
             selectedBoycottLists: [],
             timeoutDuration: '1h',
@@ -102,14 +102,14 @@ export default defineContentScript({
                                 const timeoutMs = timeoutDurations[timeoutDuration];
                                 const expiry = now + timeoutMs;
                                 const updatedSkippedDomains = {...skippedDomains, [domain]: expiry};
-                                chrome.storage.sync.set({skippedDomains: updatedSkippedDomains});
+                                browser.storage.sync.set({skippedDomains: updatedSkippedDomains});
                                 ui.remove();
                             }}
                             onClose={() => {
                                 if (canGoBack) {
                                     window.history.back();
                                 } else {
-                                    chrome.runtime.sendMessage({action: 'closeTab'});
+                                    browser.runtime.sendMessage({action: 'closeTab'});
                                 }
                             }}
                             canGoBack={canGoBack}

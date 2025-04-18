@@ -41,7 +41,7 @@ export default defineBackground({
             }
 
             if (Object.keys(boycottLists).length > 0) {
-                chrome.storage.sync.set({cachedBoycottLists: boycottLists, lastFetchTime: Date.now()}, () => {
+                browser.storage.sync.set({cachedBoycottLists: boycottLists, lastFetchTime: Date.now()}, () => {
                     console.log('Boycott lists fetched and cached:', boycottLists);
                 });
                 return true;
@@ -50,16 +50,16 @@ export default defineBackground({
         }
 
         // Initial setup on install
-        chrome.runtime.onInstalled.addListener(async () => {
+        browser.runtime.onInstalled.addListener(async () => {
             await fetchBoycottLists();
-            await chrome.storage.sync.set({fetchActive: true, fetchInterval: '12h', lastFetchTime: Date.now()});
-            await chrome.alarms.create('fetchBoycottLists', {periodInMinutes: 12 * 60}); // Default 12h in minutes
+            await browser.storage.sync.set({fetchActive: true, fetchInterval: '12h', lastFetchTime: Date.now()});
+            await browser.alarms.create('fetchBoycottLists', {periodInMinutes: 12 * 60}); // Default 12h in minutes
         });
 
         // Periodic fetch based on interval
-        chrome.alarms.onAlarm.addListener(async (alarm) => {
+        browser.alarms.onAlarm.addListener(async (alarm) => {
             if (alarm.name === 'fetchBoycottLists') {
-                const {fetchActive, fetchInterval, lastFetchTime} = await chrome.storage.sync.get({
+                const {fetchActive, fetchInterval, lastFetchTime} = await browser.storage.sync.get({
                     fetchActive: true,
                     fetchInterval: '12h',
                     lastFetchTime: 0
@@ -81,7 +81,7 @@ export default defineBackground({
         });
 
         // Handle manual fetch request from popup
-        chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
             if (message.action === 'fetchBoycottListsNow') {
                 fetchBoycottLists().then((success) => {
                     sendResponse({success});
@@ -91,7 +91,7 @@ export default defineBackground({
                 });
                 return true; // Keep the message port open for async response
             } else if (message.action === 'closeTab' && sender.tab?.id) {
-                chrome.tabs.remove(sender.tab.id).then(() => {
+                browser.tabs.remove(sender.tab.id).then(() => {
                     sendResponse({success: true});
                 }).catch((error) => {
                     console.error('Tab close error:', error);
@@ -103,8 +103,8 @@ export default defineBackground({
         });
 
         // Check fetch on startup
-        chrome.runtime.onStartup.addListener(async () => {
-            const {fetchActive, fetchInterval, lastFetchTime} = await chrome.storage.sync.get({
+        browser.runtime.onStartup.addListener(async () => {
+            const {fetchActive, fetchInterval, lastFetchTime} = await browser.storage.sync.get({
                 fetchActive: true,
                 fetchInterval: '12h',
                 lastFetchTime: 0

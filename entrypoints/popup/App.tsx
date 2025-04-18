@@ -59,7 +59,7 @@ const App: React.FC = () => {
     };
 
     useEffect(() => {
-        chrome.storage.sync.get(['isActive', 'selectedBoycottLists', 'timeoutDuration', 'cachedBoycottLists', 'disabledBoycottDomains', 'fetchActive', 'fetchInterval', 'lastFetchTime'], (data) => {
+        browser.storage.sync.get(['isActive', 'selectedBoycottLists', 'timeoutDuration', 'cachedBoycottLists', 'disabledBoycottDomains', 'fetchActive', 'fetchInterval', 'lastFetchTime'], (data) => {
             const storageData = data || {};
             const savedActive = 'isActive' in storageData && typeof storageData.isActive === 'boolean' ? storageData.isActive : false;
             const savedLists = Array.isArray(storageData.selectedBoycottLists) ? storageData.selectedBoycottLists : [];
@@ -86,7 +86,7 @@ const App: React.FC = () => {
                 : defaultLists;
             setBoycottLists(listOptions);
 
-            chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+            browser.tabs.query({active: true, currentWindow: true}, (tabs) => {
                 if (tabs[0]?.url) {
                     const url = new URL(tabs[0].url);
                     const domain = url.hostname;
@@ -105,7 +105,7 @@ const App: React.FC = () => {
     const handleToggleActive = () => {
         const newActiveState = !isActive;
         setIsActive(newActiveState);
-        chrome.storage.sync.set({isActive: newActiveState}, () => {
+        browser.storage.sync.set({isActive: newActiveState}, () => {
             console.log(`Extension ${newActiveState ? 'activated' : 'deactivated'}`);
             setListSaved(true);
             setTimeout(() => setListSaved(false), 10000);
@@ -118,7 +118,7 @@ const App: React.FC = () => {
             ? selectedLists.filter((id) => id !== listId)
             : [...selectedLists, listId];
         setSelectedLists(newLists);
-        chrome.storage.sync.set({selectedBoycottLists: newLists}, () => {
+        browser.storage.sync.set({selectedBoycottLists: newLists}, () => {
             console.log(`Updated boycott lists: ${newLists}`);
             setListSaved(true);
             setTimeout(() => setListSaved(false), 10000);
@@ -127,7 +127,7 @@ const App: React.FC = () => {
     };
 
     const handleToggleBoycott = () => {
-        chrome.storage.sync.get(['disabledBoycottDomains', 'skippedDomains'], (data) => {
+        browser.storage.sync.get(['disabledBoycottDomains', 'skippedDomains'], (data) => {
             const disabledDomains = data.disabledBoycottDomains || {};
             const skippedDomains = data.skippedDomains || {};
 
@@ -141,7 +141,7 @@ const App: React.FC = () => {
                 delete skippedDomains[currentDomain];
             }
 
-            chrome.storage.sync.set({
+            browser.storage.sync.set({
                 disabledBoycottDomains: disabledDomains,
                 skippedDomains: skippedDomains
             }, () => {
@@ -174,7 +174,7 @@ const App: React.FC = () => {
 
     const handleSave = () => {
         setTimeoutDuration(pendingTimeout);
-        chrome.storage.sync.set({
+        browser.storage.sync.set({
             timeoutDuration: pendingTimeout,
             fetchActive: isFetchActive,
             fetchInterval: pendingFetchInterval,
@@ -187,7 +187,7 @@ const App: React.FC = () => {
     };
 
     const handleResetTimeouts = () => {
-        chrome.storage.sync.set({skippedDomains: {}}, () => {
+        browser.storage.sync.set({skippedDomains: {}}, () => {
             console.log('Timeouts reset');
             setIsReset(true);
             setTimeout(() => setIsReset(false), 2000);
@@ -195,15 +195,15 @@ const App: React.FC = () => {
     };
 
     const handleReloadPage = () => {
-        chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+        browser.tabs.query({active: true, currentWindow: true}, (tabs) => {
             if (tabs[0]?.id) {
-                chrome.tabs.reload(tabs[0].id);
+                browser.tabs.reload(tabs[0].id);
             }
         });
     };
 
     const handleHardReset = () => {
-        chrome.storage.sync.set({
+        browser.storage.sync.set({
             skippedDomains: {},
             timeoutDuration: '1h',
             disabledBoycottDomains: {},
@@ -230,13 +230,13 @@ const App: React.FC = () => {
 
     const handleFetchNow = () => {
         setFetchStatus('Güncelleniyor...');
-        chrome.runtime.sendMessage({action: 'fetchBoycottListsNow'}, (response) => {
-            if (chrome.runtime.lastError) {
-                console.error('Message error:', chrome.runtime.lastError);
+        browser.runtime.sendMessage({action: 'fetchBoycottListsNow'}, (response) => {
+            if (browser.runtime.lastError) {
+                console.error('Message error:', browser.runtime.lastError);
                 setFetchStatus('Güncelleme başarısız!');
             } else if (response && response.success) {
                 setFetchStatus('Başarıyla güncellendi!');
-                chrome.storage.sync.get(['cachedBoycottLists'], (data) => {
+                browser.storage.sync.get(['cachedBoycottLists'], (data) => {
                     const updatedLists = data.cachedBoycottLists || defaultBoycottLists;
                     setCachedBoycottLists(updatedLists);
                     setBoycottLists(Object.keys(updatedLists).map((key) => ({
@@ -376,7 +376,7 @@ const App: React.FC = () => {
                     <>
                         {/* Timeout Group */}
                         <div className="mb-4 p-3 bg-gray-800 rounded-md">
-                            <h2 className="text-md font-medium text-gray-300 mb-2">Geçici Giriş Zaman Aşımı</h2>
+                            <h2 className="text-md font-medium text-gray-300 mb-2">Geçici Giriş Zaman Aşımı:</h2>
                             <div className="flex items-center space-x-4">
                                 <select
                                     value={pendingTimeout}
@@ -401,8 +401,8 @@ const App: React.FC = () => {
 
                         {/* Fetch Group */}
                         <div className="mb-4 p-3 bg-gray-800 rounded-md">
-                            <h2 className="text-md font-medium text-gray-300 mb-2">Periyodik Boykot Listesi
-                                Güncelleme</h2>
+                            <h2 className="text-md font-medium text-gray-300 mb-2">Boykot Listesi Güncelleme
+                                Periyodu:</h2>
                             <div className="flex items-center space-x-4 mb-3">
                                 <label className="flex items-center space-x-2 cursor-pointer">
                                     <input
